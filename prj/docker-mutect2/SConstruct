@@ -1,0 +1,74 @@
+import os
+from settings import  *
+
+
+################################### Quick documentation ############################
+
+# Runs mutect 2 using docker images alexcoppe/gatk.
+# Needed parameters:
+#   - genome: directory with the human genome in fasta format named reference.fa
+#   - annotation: directory with annnotation files (dbSNP vcsf, COSMIC vcf)
+#   - data: directory with normal and tumor bam files
+#   - nb: normal bam filename (default = normal.bam)
+#   - tb: tumor bam filename (default = tumor.bam)
+#   - cosmic: cosmic vcf filename (default = cosmic.vcf.gz, vcf tabix index is needed. See below how to generate it)
+#   - dbsnp: dbsnp vcf filename (default = dbsnp.vcf.gz, vcf tabix index is needed.)
+#   - target: target regions bed file
+
+# Sample usage:
+# scons data=$(pwd) genome=~/genomic_data/human_genome/ annotation=~/annotation cosmic=CosmicCodingMuts_v77.vcf.gz dbsnp=All_20151104.vcf target=nexterarapidcapture_exome_targetedregions_v1.2.bed nb=n.bam tb=t.bam
+
+#Sample usage using default parameters
+# scons data=$(pwd) genome=~/genomic_data/human_genome/ annotation=~/annotation target=nexterarapidcapture_exome_targetedregions_v1.bed 
+
+
+# How to generate vcf index:
+# bgzip -c file.vcf > file.vcf.gz; tabix -p vcf file.vcf.gz
+
+####################################################################################
+
+
+env = Environment(ENV = os.environ, SHELL = '/bin/bash')
+env.AppendENVPath('PATH', os.getcwd())
+Decider('timestamp-newer')
+
+
+
+############################# Arguments ###########################################
+
+bamDir = ARGUMENTS.get("data")
+genomeDir = ARGUMENTS.get("genome")
+annotationDir = ARGUMENTS.get("annotation")
+cosmic = ARGUMENTS.get("cosmic", "cosmic.vcf.gz")
+dbsnp = ARGUMENTS.get("dbsnp", "dbsnp.vcf.gz")
+targetRegions = ARGUMENTS.get("target")
+normalBam = ARGUMENTS.get("nb", "normal.bam")
+tumorBam = ARGUMENTS.get("tb", "tumor.bam")
+
+
+
+################## Generation of annotation parameteres #########################
+
+annotationString = ""
+if cosmic:
+    annotationString += "--cosmic /annotation/" + cosmic
+if dbsnp:
+    annotationString += " --dbsnp /annotation/" + dbsnp
+
+#################################################################################
+
+
+mutect2CMD = 'docker run -it --rm ' \
+                '-v {}:/data ' \
+                '-v {}:/genome ' \
+                '-v {}:/annotation ' \
+                'alexcoppe/gatk ' \
+                '-T MuTect2 ' \
+                '-R /genome/reference.fa ' \
+                '-I:tumor /data/{} ' \
+                '-I:normal /data/{} ' \
+                '-L /annotation/{} ' \
+                '{} ' \
+                '-o /data/$TARGET'.format(bamDir, genomeDir, annotationDir, normalBam, tumorBam,  targetRegions, annotationString)
+
+mutect2 = env.Command(["mutec2-variants.vcf"], [], mutect2CMD)
