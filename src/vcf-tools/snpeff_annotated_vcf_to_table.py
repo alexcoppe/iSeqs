@@ -21,6 +21,14 @@ if __name__ == "__main__":
     patient = args.patient
     impacts = args.impacts.split(",")
 
+
+    variant_columns = ["chr", "pos", "rs", "ref"]
+    transcript_columns = ["alt", "annotation", "impact", "gene_name", "ensg", "feature_type", "feature", "transcript_biotype", "rank", "hgvs_c", "hgvs_p", "cDNA_position", "CDS_position_CDS_len", "protein_position_protein_len", "distance_to_feature"]
+
+    header = "\t".join(variant_columns + transcript_columns)
+    if patient: header = "patient\t" + header
+    print header
+
     for line in  args.vcf:
         if not line.startswith("#"):
             chr,pos,rs,ref,alt = line.split()[0:5]
@@ -34,15 +42,16 @@ if __name__ == "__main__":
             transcripts = annotation_field.split(",")
             for transcript in transcripts:
                 splitted_transcript = transcript.split("|")
-                keys = ["alt", "annotation", "impact", "gene_name", "ensg", "feature_type", "feature", "transcript_biotype", "rank", "hgvs_c", "hgvs_p", "cDNA_position", "CDS_position_CDS_len", "protein_position_protein_len", "distance_to_feature"]
 
-                transcript_annotation = dict(zip(keys, splitted_transcript))
 
+                transcript_annotation = dict(zip(transcript_columns, splitted_transcript))
 
                 if transcript_annotation.get("impact") in impacts or impacts == [""]:
-                    if patient: patient_string = "{}\t".format(patient)
-                    else: patient_string = ""
+                    if patient:
+                        patient_string = "{}\t".format(patient)
+                    else:
+                        patient_string = ""
 
-                    variant_string = "{}\t{}\t{}\t{}\t{}\t".format(chr, pos, rs, ref, alt)
-                    transcript_string = "{annotation}\t{impact}\t{gene_name}\t{hgvs_p}\t{feature}".format(**transcript_annotation)
-                    print patient_string + variant_string + transcript_string
+                    variant_string = "{}\t{}\t{}\t{}\t".format(chr, pos, rs, ref)
+
+                    print variant_string + "\t".join( ["{" + el + "}" for el in transcript_columns] ).format(**transcript_annotation)
