@@ -13,7 +13,7 @@ def build_format_dictionary(format_string, sample_string):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Do something")
 
-    parser.add_argument('-f', '--vcf', action='store', type=file, help="vcf file")
+    parser.add_argument('-f', '--vcf', action='store', type=file, help="vcf file", required=True)
     parser.add_argument("-p", "--patient", help="Patient name to be printed in patient column", required=False, type=str, default="")
     parser.add_argument("-i", "--impacts", help="List of impacts to be filtered, separated by ,", required=False, type=str, default="")
     args = parser.parse_args()
