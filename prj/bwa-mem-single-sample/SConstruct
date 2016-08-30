@@ -1,0 +1,183 @@
+import os
+from settings import  *
+
+
+################################### Quick documentation ############################
+
+#Files needed by pipeline (better symlink them):
+# - GenomeAnalysisTK.jar
+# - reference.fa
+# - reference.fa.fai samtools faidx <reference.fa>
+# - reference.dict java -jar CreateSequenceDictionary.jar R=reference.fasta O=reference.dict
+# - annotation dirctory containing 00-All.vcf.idx 00-All.vcf
+# - snpEff.jar
+# - SnpSift.jar
+# - snpEff.config
+
+
+
+
+################################ Scons Settings  #######################################
+
+#Scons settings Section
+env = Environment(ENV = os.environ, SHELL = '/bin/bash')
+env.AppendENVPath('PATH', os.getcwd())
+Decider('timestamp-newer')
+
+
+
+######################################################################################################
+###########################     Arguments     ########################################################
+######################################################################################################
+
+#Filename of the reference human genome
+reference = ARGUMENTS.get("reference", "reference.fa")
+#The reference directory should contain the fasta file with the human genome and the index build 
+#by bwa with the bwa index <genome.fasta> command (it produces the a bunch of files with these extensions:
+# - .amb
+# - .ann
+# - .bwt
+# - .pac
+# - .sa
+
+referenceDir = ARGUMENTS.get("refdir", "./")
+if not referenceDir.endswith("/"): referenceDir = referenceDir + "/"
+
+gatkJarDir = ARGUMENTS.get("gatkJarDir", "~/local/GenomeAnalysisTK/")
+if not gatkJarDir.endswith("/"): gatkJarDir = gatkJarDir + "/"
+
+annotationDir = ARGUMENTS.get("annotationDir", "~/annotation/")
+if not annotationDir.endswith("/"): annotationDir = annotationDir + "/"
+
+
+dbsnpVCF = ARGUMENTS.get("dbsnp", "All_20151104.vcf")
+
+######################################################################################################
+########################### BWA MEM Alignment ########################################################
+######################################################################################################
+
+#referenceWithoutSuffix = ".".join(reference.split(".")[:-1]) 
+
+
+
+#Without -M, a split read is flagged as 2048 ( supplementary alignment ) 
+#see http://picard.sourceforge.net/explain-flags.html . This flag is a recent addition to the SAM spec.
+#with option -M it is flagged as a duplicate flag=256 ( not primary alignment ):
+#will be ignored by most 'old' tools.
+#
+#
+##Keep only read mapped in proper pair and 
+#remove reads with map quality 0 (multiple mapping and and unmapped reads, this ones are removed
+#by -f 2)
+#Remove reads with flag 256 (not primary alignment)
+
+bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} <(zcat {}) <(zcat {}) |  samtools view -S -h -q 2 -f 2 -F 256 - | python sam_remove_soft_clipping.py | samtools view -h -Sb - > $TARGET".format(sample_name, "exome", sample_name, processors, referenceDir, reference, reads1, reads2 )
+bwa = env.Command(["mapping.bam"], [], bwaCMD )
+
+
+
+sortBamCMD = "samtools sort -o -m {} $SOURCE unused_parameter  > $TARGET".format(maxMemory)
+sortBam = env.Command(["mapping-sorted.bam"], [bwa], sortBamCMD)
+
+
+
+#######################################################################################################
+########################### Removal of PCR duplicates ################################################
+######################################################################################################
+
+pcrRemovalCMD = "samtools rmdup -S $SOURCE $TARGET"
+pcrRemoval = env.Command(["mapping-sorted-rmdup.bam"], [sortBam], pcrRemovalCMD)
+
+pcrRemovalIndexCMD = "samtools index $SOURCE"
+pcrRemovalIndex = env.Command(["mapping-sorted-rmdup.bam.bai"], [pcrRemoval], pcrRemovalIndexCMD)
+
+
+######################################################################################################
+########################### Local realignment around indels ##########################################
+######################################################################################################
+
+
+#Table of putative indels
+putativeIndelsTableCMD = "java -Xmx4g -jar {}GenomeAnalysisTK.jar -T RealignerTargetCreator -R {}{} -o $TARGET  -I $SOURCE".format(gatkJarDir, referenceDir, reference)
+putativeIndelsTable = env.Command(["realigning.intervals"], [pcrRemoval,pcrRemovalIndex], putativeIndelsTableCMD)
+
+
+#Local realignment around indels
+indelRealignerCmd = "java -Xmx4g -jar {}GenomeAnalysisTK.jar -R {}".format(gatkJarDir, referenceDir) + reference +  " -I ${SOURCES[0]} -T IndelRealigner -targetIntervals ${SOURCES[1]} -o $TARGET"
+indelRealignment = env.Command(["mapping-sorted-rmdup-realigned.bam"], [pcrRemoval, putativeIndelsTable], indelRealignerCmd)
+
+
+######################################################################################################
+########################### Quality score recalibration ##############################################
+######################################################################################################
+
+recalibrationTableCMD = "java -Xmx4g -jar {}GenomeAnalysisTK.jar -T BaseRecalibrator -I $SOURCE -R {}{}  -knownSites {}{} -o $TARGET".format(gatkJarDir,referenceDir,reference,annotationDir,dbsnpVCF)
+recalibrationTable = env.Command(["{}.grp".format(projectName)], [indelRealignment], recalibrationTableCMD)
+#n_recalibrationTable = env.Command(["n_{}.grp".format(projectName)], [n_indelRealignment], recalibrationTableCMD)
+
+
+#renderReadsCMD = "java -jar GenomeAnalysisTK.jar -T PrintReads -R " + reference + " -I ${SOURCES[0]} -BQSR ${SOURCES[1]} -o $TARGET"
+#t_renderReads = env.Command(["t_mapping-sorted-rmdup-realigned-recal.bam"], [t_indelRealignment, t_recalibrationTable], renderReadsCMD)
+#n_renderReads = env.Command(["n_mapping-sorted-rmdup-realigned-recal.bam"], [n_indelRealignment, n_recalibrationTable], renderReadsCMD)
+
+
+
+######################################################################################################
+###########################  Statistics ##############################################################
+######################################################################################################
+
+#coverageHistCMD = "bedtools coverage -hist -abam $SOURCE -b annotation/" + exome_regions +  " | grep ^all > $TARGET"
+#t_coverageHist = env.Command(["t_coverage-hist.txt"], [t_renderReads], coverageHistCMD)
+#n_coverageHist = env.Command(["n_coverage-hist.txt"], [n_renderReads], coverageHistCMD)
+
+
+
+
+######################################################################################################
+###########################  MuTect    ###############################################################
+######################################################################################################
+
+#muTectCMD = "java -jar muTect-1.1.5.jar --analysis_type MuTect --reference_sequence " + reference + " --dbsnp annotation/All_20151104.vcf  --intervals annotation/" + exome_regions + " --input_file:normal ${SOURCES[0]} --input_file:tumor ${SOURCES[1]} --vcf ${TARGETS[0]} --coverage_file ${TARGETS[1]} --out ${TARGETS[2]}"
+#muTect = env.Command(["mutect-variants.vcf", "coverage.wig.txt", "mutect-variants.txt"], [n_renderReads, t_renderReads], muTectCMD)
+
+
+
+######################################################################################################
+########################### SNP Annotation  ##########################################################
+######################################################################################################
+
+##Filter out REJECT variants from origina muTect vcf
+#filterREJECTCMD = "grep -v -P  \"\\tREJECT\" $SOURCE  > $TARGET"
+#filterREJECT = env.Command(["mutect-confident-somatic-variants.vcf"], [muTect], filterREJECTCMD)
+
+
+##Annotation by snpEff
+#snpEFFCMD = "java -Xmx4g -jar snpEff.jar eff -v GRCh37.75 $SOURCE > $TARGET"
+#snpEFF = env.Command(["mutect-confident-somatic-variants-with-eff.vcf"],[filterREJECT],snpEFFCMD)
+
+
+##Clinvar annotation
+#clinvarCMD = "java -Xmx4g -jar SnpSift.jar annotate annotation/clinvar.vcf.gz  $SOURCE  > $TARGET"
+#clinvar = env.Command(["mutect-confident-somatic-variants-with-eff-clinvar.vcf"], [snpEFF], clinvarCMD)
+
+
+##Cosmic coding variants annotation
+#cosmicCodingCMD = "java -Xmx4g -jar SnpSift.jar annotate annotation/CosmicCodingMuts_v77.vcf.gz  $SOURCE  > $TARGET"
+#cosmicCoding = env.Command(["mutect-confident-somatic-variants-with-eff-clinvar-cosmiccod.vcf"], [clinvar], cosmicCodingCMD)
+
+
+#cosmicNonCodingCMD = "java -Xmx4g -jar SnpSift.jar annotate annotation/CosmicNonCodingVariants.vcf.gz  $SOURCE  > $TARGET"
+#cosmicNonCoding = env.Command(["mutect-confident-somatic-variants-with-eff-clinvar-cosmiccod-cosmicnoncod.vcf"], [cosmicCoding], cosmicNonCodingCMD)
+
+
+######################################################################################################
+########################### SNP Tagging ############################################################
+######################################################################################################
+#tagVariants = "java -Xmx4g -jar GenomeAnalysisTK.jar -R " + reference + " -T VariantFiltration --variant $SOURCE -o $TARGET \
+#--clusterWindowSize 10 \
+#--filterExpression \"DP < 30 \" --filterName \"LowCoverage\" \
+#--filterExpression \"QUAL < 30.0 \" --filterName \"VeryLowQual\" \
+#--filterExpression \"QUAL >= 30.0 && QUAL < 50.0 \" --filterName \"LowQual\" \
+#--filterExpression \"FS > 60.0 \" --filterName \"StrandBias\" \
+#--filterExpression \"QD < 1.5 \" --filterName \"LowQD\" "
+#snpFiltering = env.Command(["somomatic-variants-tagged.vcf"], [muTect], tagVariants)
