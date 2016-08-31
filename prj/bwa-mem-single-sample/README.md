@@ -51,6 +51,7 @@ scon
 #Explicity specify the directory containing the fasta file of the reference genome
 scons referenceDir=~/reference
 
+#Explicity specify 3 parameters
 scons referenceDir=~/reference gatkJarDir=~/local/GATK sampleName=patient1
 
 ```
@@ -78,12 +79,12 @@ scons referenceDir=~/reference gatkJarDir=~/local/GATK sampleName=patient1
 
 * processors: number of CPUs to be used
 
-* maxMemory: mx memory to be used (in bytes)
+* maxMemory: max memory to be used (in bytes)
 
 
 ### Results:
 
-The pipeline will produce a bam file called *mapping-sorted-rmdup-realigned-recal.bam* and a file called coverage-hist.txt with coverage statistics containing the following columns:
+The pipeline will produce a bam file called *mapping-sorted-rmdup-realigned-recal.bam* and a file called *coverage-hist.txt* with coverage statistics containing the following columns:
 
 1. A first column containing only the word all, it derives from the bedtools command used to produce the file.
 
