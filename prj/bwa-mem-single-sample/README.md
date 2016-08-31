@@ -51,4 +51,46 @@ scon
 #Explicity specify the directory containing the fasta file of the reference genome
 scons referenceDir=~/reference
 
+scons referenceDir=~/reference gatkJarDir=~/local/GATK sampleName=patient1
+
 ```
+
+
+### List of parameters:
+
+* reference:  the file name of the fasta reference file (e.g. reference.fas)
+
+* referenceDir: the path to the directory containing the reference sequence (e.g. ~/genome ) 
+
+* reads1 & reads2: the the name of the fastq files containing the paired end reads.
+
+* annotationDir: the path to the directory with annotation files (e.g. ~/annotation )
+
+* exomeRegions: the bed file with exome caputered regions. This file must be located in the annotaion directory.
+
+* gatkJarDir: the path to the directory to containing the GenomeAnalysisTK.jar file.
+
+* dbsnpVCF: the name of the vcf file downloaded from dbSNP database.
+
+* projectName: a name for the project
+
+* sampleName: the sample's name
+
+* processors: number of CPUs to be used
+
+* maxMemory: mx memory to be used (in bytes)
+
+
+### Results:
+
+The pipeline will produce a bam file called *mapping-sorted-rmdup-realigned-recal.bam* and a file called coverage-hist.txt with coverage statistics containing the following columns:
+
+1. A first column containing only the word all, it derives from the bedtools command used to produce the file.
+
+2. The coverage level.
+
+3. Number of bases with the coverage level indicated by the previous column.
+
+4. The total number of bases targeted by the exome sequencing.
+
+5. The fraction of bases with coverage equal to the one indicated in column 2
