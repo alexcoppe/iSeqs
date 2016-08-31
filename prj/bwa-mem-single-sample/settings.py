@@ -1,23 +1,28 @@
 #The reference genome in fasta format
-#reference = "reference.fa"
-##The paired reads in fastq format
-#tumor_reads1 = "1TF_1.fastq.gz"
-#tumor_reads2 = "1TF_2.fastq.gz"
+reference = "reference.fa"
+referenceDir = "./genome"
 
-#normal_reads1 = "1N_1.fastq.gz"
-#normal_reads2 = "1N_2.fastq.gz"
+#The paired reads in fastq format
 reads1 = "m1_TAAGGCGA_R1_M.fastq.gz"
 reads2 = "m1_TAAGGCGA_R2_M.fastq.gz"
 
+#Annotation directory
+annotationDir = "./annotation"
+#Exome sequencing kit bed file
+exome_regions = "nexterarapidcapture_exome_targetedregions_v1.2.bed"
 
-#exome_regions = "SureSelect_Human_All_Exon_V5.bed"
+#Directory containing  GenomeAnalysisTK.jar  
+gatkJarDir = "~/local/GenomeAnalysisTK/"
 
+#The dbSNP vcf file
+dbsnpVCF = "All_20151104.vcf"
 
-##Other parameters
+#Project metadata
 projectName = "m1"
-processors = 8
-#numDistinctAligns = 2
-maxMemory = 1000000000
 sample_name = "m1"
+
+#Computational resources
+processors = 8
+maxMemory = 1000000000
 
 
