@@ -48,10 +48,10 @@ An annotation directory specified by the annotationDir argument containing the f
 #Launch the pipeline using all parameters from the settings.py file
 scon
 
-#Explicity specify the directory containing the fasta file of the reference genome
+#Explicitly specify the directory containing the fasta file of the reference genome
 scons referenceDir=~/reference
 
-#Explicity specify 3 parameters
+#Explicitly specify 3 parameters
 scons referenceDir=~/reference gatkJarDir=~/local/GATK sampleName=patient1
 
 ```
