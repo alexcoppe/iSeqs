@@ -43,7 +43,7 @@ reference = ARGUMENTS.get("reference", settings.reference)
 
 # - reference.fa.fai obtained by samtools faidx <reference.fa>
 # - reference.dict obtained by java -jar CreateSequenceDictionary.jar R=reference.fasta O=reference.dict
-referenceDir = ARGUMENTS.get("refdir", settings.referenceDir)
+referenceDir = ARGUMENTS.get("referenceDir", settings.referenceDir)
 if not referenceDir.endswith("/"): referenceDir = referenceDir + "/"
 
 
@@ -53,16 +53,16 @@ if not gatkJarDir.endswith("/"): gatkJarDir = gatkJarDir + "/"
 annotationDir = ARGUMENTS.get("annotationDir",settings.annotationDir)
 if not annotationDir.endswith("/"): annotationDir = annotationDir + "/"
 
-dbsnpVCF = ARGUMENTS.get("dbsnp", settings.dbsnpVCF)
+dbsnpVCF = ARGUMENTS.get("dbsnpVCF", settings.dbsnpVCF)
 
 
 reads1 = ARGUMENTS.get("reads1", settings.reads1)
 reads2 = ARGUMENTS.get("reads2", settings.reads2)
 
-exome_regions = ARGUMENTS.get("exome", settings.exome_regions)
+exomeRegions = ARGUMENTS.get("exomeRegions", settings.exomeRegions)
 
-projectName = ARGUMENTS.get("projetName", settings.projetName )
-sample_name = ARGUMENTS.get("sample_name", settings.sample_name)
+projectName = ARGUMENTS.get("projectName", settings.projectName )
+sampleName = ARGUMENTS.get("sampleName", settings.sampleName)
 
 
 ######################################################################################################
@@ -84,7 +84,7 @@ sample_name = ARGUMENTS.get("sample_name", settings.sample_name)
 #by -f 2)
 #Remove reads with flag 256 (not primary alignment)
 
-bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} <(zcat {}) <(zcat {}) |  samtools view -S -h -q 2 -f 2 -F 256 - | python sam_remove_soft_clipping.py | samtools view -h -Sb - > $TARGET".format(settings.sample_name, "exome", settings.sample_name, settings.processors, referenceDir, reference, settings.reads1, settings.reads2 )
+bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} <(zcat {}) <(zcat {}) |  samtools view -S -h -q 2 -f 2 -F 256 - | python sam_remove_soft_clipping.py | samtools view -h -Sb - > $TARGET".format(settings.sampleName, "exome", settings.sampleName, settings.processors, referenceDir, reference, settings.reads1, settings.reads2 )
 bwa = env.Command(["mapping.bam"], [], bwaCMD )
 
 
@@ -137,5 +137,5 @@ renderReads = env.Command(["mapping-sorted-rmdup-realigned-recal.bam"], [indelRe
 ###########################  Statistics ##############################################################
 ######################################################################################################
 
-coverageHistCMD = "bedtools coverage -hist -abam $SOURCE -b {}{}".format(annotationDir,exome_regions) + " | grep ^all > $TARGET"
+coverageHistCMD = "bedtools coverage -hist -abam $SOURCE -b {}{}".format(annotationDir,exomeRegions) + " | grep ^all > $TARGET"
 coverageHist = env.Command(["coverage-hist.txt"], [renderReads], coverageHistCMD)

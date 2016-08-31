@@ -9,7 +9,7 @@ reads2 = "m1_TAAGGCGA_R2_M.fastq.gz"
 #Annotation directory
 annotationDir = "./annotation"
 #Exome sequencing kit bed file
-exome_regions = "nexterarapidcapture_exome_targetedregions_v1.2.bed"
+exomeRegions = "nexterarapidcapture_exome_targetedregions_v1.2.bed"
 
 #Directory containing  GenomeAnalysisTK.jar  
 gatkJarDir = "~/local/GenomeAnalysisTK/"
@@ -19,10 +19,8 @@ dbsnpVCF = "All_20151104.vcf"
 
 #Project metadata
 projectName = "m1"
-sample_name = "m1"
+sampleName = "m1"
 
 #Computational resources
 processors = 8
 maxMemory = 1000000000
-
-
