@@ -1,0 +1,54 @@
+import os
+import settings
+
+
+
+################################ Scons Settings  #######################################
+
+#Scons settings Section
+env = Environment(ENV = os.environ, SHELL = '/bin/bash')
+env.AppendENVPath('PATH', os.getcwd())
+Decider('timestamp-newer')
+
+
+
+######################################################################################################
+###########################     Arguments     ########################################################
+######################################################################################################
+
+referenceDir = ARGUMENTS.get("referenceDir", settings.referenceDir)
+if not referenceDir.endswith("/"): referenceDir = referenceDir + "/"
+
+reference = ARGUMENTS.get("reference", settings.reference)
+
+mutectDir = ARGUMENTS.get("mutectDir", settings.mutectDir)
+if not mutectDir.endswith("/"): mutectDir = mutectDir + "/"
+
+annotationDir = ARGUMENTS.get("annotationDir",settings.annotationDir)
+if not annotationDir.endswith("/"): annotationDir = annotationDir + "/"
+
+dbsnpVCF = ARGUMENTS.get("dbsnpVCF", settings.dbsnpVCF)
+
+
+bamN = ARGUMENTS.get("bamN", settings.bamN)
+bamT = ARGUMENTS.get("bamT", settings.bamT)
+
+exomeRegions = ARGUMENTS.get("exomeRegions", settings.exomeRegions)
+
+
+######################################################################################################
+###########################  MuTect    ###############################################################
+######################################################################################################
+
+muTectCMD1 = "java -jar {}muTect-1.1.5.jar --analysis_type MuTect --reference_sequence {}{}".format(mutectDir,referenceDir,reference)
+muTectCMD2 = "--dbsnp {}{} --intervals {}{}".format(annotationDir,dbsnpVCF,annotationDir,exomeRegions)
+muTectCMD3 = "--input_file:normal {} --input_file:tumor {}".format(bamN, bamT)
+muTectCMD4 = " --vcf ${TARGETS[0]} --coverage_file ${TARGETS[1]} --out ${TARGETS[2]}"
+
+muTectCMD = muTectCMD1 + " " + muTectCMD2 + " " + muTectCMD3 + " " + muTectCMD4
+
+muTect = env.Command(["mutect-variants.vcf", "coverage.wig.txt", "mutect-variants.txt"], [], muTectCMD)
+
+
+
+
