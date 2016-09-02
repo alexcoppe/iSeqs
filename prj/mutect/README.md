@@ -1,6 +1,27 @@
-# Somatic variants identification with mutect scons pipeline
+# Somatic variants identification with MuTect, scons pipeline
 
 A scons based pipeline for mapping Illumina paired end reads obtained from exome sequencing to the human genome.
+
+The following steps will be carried out:
+
+1. **MuTect**: somatic variants identification. The following parameters will be used:
+    * --analysis_type MuTect
+    * --reference_sequence
+    * --dbsnp
+    * --intervals
+    * --input_file:normal
+    * --input_file:tumor
+    * --vcf
+    * --coverage_file
+    * --out
+
+2. **Filter out** variants tagged as **REJECT** by MuTect (grep)
+
+3. Variants **effect prediction** and annotation by SnpEff
+
+4. **ClinVar** variants annotation using snpSift
+
+5. **Cosmic** variants annotations (both coding and non-coding)
 
 ### Software Dependencies:
 * [scons](http://scons.org/)
