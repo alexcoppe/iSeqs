@@ -1,4 +1,4 @@
-# Illumina exome sequencing reads mapping scons pipeline
+# Somatic variants identification with mutect scons pipeline
 
 A scons based pipeline for mapping Illumina paired end reads obtained from exome sequencing to the human genome.
 
