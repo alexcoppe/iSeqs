@@ -9,7 +9,7 @@ bamT = "m2.bam"
 
 
 #Annotation directory
-annotationDir = "./annotation"
+annotationDir = "annotation"
 #Exome sequencing kit bed file
 exomeRegions = "nexterarapidcapture_exome_targetedregions_v1.2.bed"
 
@@ -19,7 +19,13 @@ mutectDir = "~/local/mutect/"
 #The dbSNP vcf file
 dbsnpVCF = "All_20151104.vcf"
 
+#Clinvar vcf
+clinvarVCF = "clinvar.vcf.gz"
 
-##Computational resources
-#processors = 8
-#maxMemory = 1000000000
+
+#Cosmic vcfs
+cosmicCodingVCF = "CosmicCodingMuts_v77.vcf.gz"
+cosmicNonCodingVCF = "CosmicNonCodingVariants.vcf.gz"
+
+snpeffDir = "~/local/snpEff"
+snpeffGenomeVersion = "GRCh37.75"

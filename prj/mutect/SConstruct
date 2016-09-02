@@ -29,11 +29,22 @@ if not annotationDir.endswith("/"): annotationDir = annotationDir + "/"
 
 dbsnpVCF = ARGUMENTS.get("dbsnpVCF", settings.dbsnpVCF)
 
+clinvarVCF = ARGUMENTS.get("clinvarVCF", settings.clinvarVCF)
+
+cosmicCodingVCF = ARGUMENTS.get("cosmicCodingVCF", settings.cosmicCodingVCF)
+cosmicNonCodingVCF = ARGUMENTS.get("cosmicNonCodingVCF", settings.cosmicNonCodingVCF)
+
 
 bamN = ARGUMENTS.get("bamN", settings.bamN)
 bamT = ARGUMENTS.get("bamT", settings.bamT)
 
 exomeRegions = ARGUMENTS.get("exomeRegions", settings.exomeRegions)
+
+
+snpeffDir = ARGUMENTS.get("snpeffDir",settings.snpeffDir)
+if not snpeffDir.endswith("/"): snpeffDir = snpeffDir + "/"
+
+snpeffGenomeVersion = ARGUMENTS.get("snpeffGenomeVersion", settings.snpeffGenomeVersion)
 
 
 ######################################################################################################
@@ -49,6 +60,31 @@ muTectCMD = muTectCMD1 + " " + muTectCMD2 + " " + muTectCMD3 + " " + muTectCMD4
 
 muTect = env.Command(["mutect-variants.vcf", "coverage.wig.txt", "mutect-variants.txt"], [], muTectCMD)
 
+
+######################################################################################################
+########################### SNP Annotation  ##########################################################
+######################################################################################################
+
+#Filter out REJECT variants from origina muTect vcf
+filterREJECTCMD = "grep -v -P  \"\\tREJECT\" $SOURCE  > $TARGET"
+filterREJECT = env.Command(["mutect-confident-somatic-variants.vcf"], [muTect], filterREJECTCMD)
+
+
+#Annotation by snpEff
+snpEFFCMD = "java -Xmx4g -jar {}snpEff.jar eff -v {} $SOURCE > $TARGET".format(snpeffDir, snpeffGenomeVersion)
+snpEFF = env.Command(["mutect-confident-somatic-variants-with-eff.vcf"],[filterREJECT],snpEFFCMD)
+
+#Clinvar annotation
+clinvarCMD = "java -Xmx4g -jar {}SnpSift.jar annotate {}{}  $SOURCE  > $TARGET".format(snpeffDir,annotationDir,clinvarVCF)
+clinvar = env.Command(["mutect-confident-somatic-variants-with-eff-clinvar.vcf"], [snpEFF], clinvarCMD)
+
+#Cosmic coding variants annotation
+cosmicCodingCMD = "java -Xmx4g -jar {}SnpSift.jar annotate {}{} $SOURCE  > $TARGET".format(snpeffDir,annotationDir,cosmicCodingVCF)
+cosmicCoding = env.Command(["mutect-confident-somatic-variants-with-eff-clinvar-cosmiccod.vcf"], [clinvar], cosmicCodingCMD)
+
+
+cosmicNonCodingCMD = "java -Xmx4g -jar {}SnpSift.jar annotate {}{}  $SOURCE  > $TARGET".format(snpeffDir,annotationDir,cosmicNonCodingVCF)
+cosmicNonCoding = env.Command(["mutect-confident-somatic-variants-with-eff-clinvar-cosmiccod-cosmicnoncod.vcf"], [cosmicCoding], cosmicNonCodingCMD)
 
 
 
