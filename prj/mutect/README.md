@@ -120,3 +120,5 @@ SnpEff software should be already installed and configured.
 * mutect-variants.txt: the variants text file produced by mutect. See [this page](http://gatkforums.broadinstitute.org/gatk/discussion/4231/what-is-the-output-of-mutect-and-how-should-i-interpret-it) for a description of the columns in the file.
 
 * snpEff_summary.html & snpEff_genes.txt: output from snpeEff, see [this page](http://snpeff.sourceforge.net/SnpEff_manual.html#outputSummary) for a description this two files.
+
+* mutect-variants.vcf: original vcf file obtained from MuTect. Not annotated.
