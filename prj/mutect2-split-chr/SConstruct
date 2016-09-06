@@ -1,0 +1,104 @@
+import os
+import settings
+
+
+################################### Quick documentation ############################
+
+
+################################ Scons Settings  #######################################
+
+#Scons settings Section
+env = Environment(ENV = os.environ, SHELL = '/bin/bash')
+env.AppendENVPath('PATH', os.getcwd())
+Decider('timestamp-newer')
+
+
+
+######################################################################################################
+###########################     Arguments     ########################################################
+######################################################################################################
+
+#Filename of the reference human genome
+reference = ARGUMENTS.get("reference", settings.reference)
+
+#The reference directory should contain the fasta file with the human genome and the index build 
+#by bwa with the bwa index <genome.fasta> command (it produces the a bunch of files with these extensions:
+# - .amb
+# - .ann
+# - .bwt
+# - .pac
+# - .sa
+
+# - reference.fa.fai obtained by samtools faidx <reference.fa>
+# - reference.dict obtained by java -jar CreateSequenceDictionary.jar R=reference.fasta O=reference.dict
+referenceDir = ARGUMENTS.get("referenceDir", settings.referenceDir)
+if not referenceDir.endswith("/"): referenceDir = referenceDir + "/"
+
+
+#gatkJarDir = ARGUMENTS.get("gatkJarDir", settings.gatkJarDir)
+#if not gatkJarDir.endswith("/"): gatkJarDir = gatkJarDir + "/"
+
+annotationDir = ARGUMENTS.get("annotationDir",settings.annotationDir)
+if not annotationDir.endswith("/"): annotationDir = annotationDir + "/"
+
+#dbsnpVCF = ARGUMENTS.get("dbsnpVCF", settings.dbsnpVCF)
+
+
+#reads1 = ARGUMENTS.get("reads1", settings.reads1)
+#reads2 = ARGUMENTS.get("reads2", settings.reads2)
+
+exomeRegions = ARGUMENTS.get("exomeRegions", settings.exomeRegions)
+
+#projectName = ARGUMENTS.get("projectName", settings.projectName )
+#sampleName = ARGUMENTS.get("sampleName", settings.sampleName)
+
+tumorBam = ARGUMENTS.get("tumorBam", settings.tumorBam)
+normalBam = ARGUMENTS.get("normalBam", settings.normalBam)
+
+startChr = int(ARGUMENTS.get("startChr", settings.startChr))
+
+endChr = int(ARGUMENTS.get("endChr", settings.endChr))
+
+
+######################################################################################################
+########################### Split input bams by chromosome ###########################################
+######################################################################################################
+
+
+samtools_split_cmd = "samtools view -b {} {} > $TARGET"
+
+samtools_index_cmd = "samtools index $SOURCE"
+
+
+command_list = []
+for chr in range(startChr, endChr + 1):
+    prefix = "t_"
+    split_tumor_bam = env.Command(["t_chr{}.bam".format(chr)], [], samtools_split_cmd.format(tumorBam, chr))
+    command_list.append(split_tumor_bam)
+    index_bam = env.Command(["t_chr{}.bam.bai".format(chr)], [split_tumor_bam], samtools_index_cmd)
+    command_list.append(index_bam)
+
+for chr in range(startChr, endChr + 1):
+    prefix = "n_"
+    split_normal_bam = env.Command(["n_chr{}.bam".format(chr)], [], samtools_split_cmd.format(normalBam, chr))
+    command_list.append(split_normal_bam)
+    index_bam = env.Command(["n_chr{}.bam.bai".format(chr)], [split_normal_bam], samtools_index_cmd)
+    command_list.append(index_bam)
+    
+
+
+
+######################################################################################################
+########################### Run MuTect2 on every chromosome ##########################################
+######################################################################################################
+
+mutect_command_part1 = "docker run -it --rm -v $$(pwd):/data"
+mutect_command_part2 = "-v {}:/genome -v {}:/annotation alexcoppe/gatk -T MuTect2".format(referenceDir, annotationDir)
+mutect_command_part3 = "-R /genome/{} -I:tumor /data/t_chr{}.bam -I:normal /data/n_chr{}.bam".format(reference,chr,chr)
+mutect_command_part4 = "-L /annotation/{} -o $TARGET".format(exomeRegions)
+mutect_command_parts = [mutect_command_part1, mutect_command_part2, mutect_command_part3, mutect_command_part4]
+
+for chr in range(startChr, endChr + 1):
+    mutect2 = env.Command(["mutect_variants_chr{}.vcf".format(chr)], [command_list], " ".join(mutect_command_parts))
+
+
