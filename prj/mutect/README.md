@@ -112,3 +112,11 @@ SnpEff software should be already installed and configured.
 
 
 ### Results:
+
+* coverage.wig.txt: **Coverage / WIGGLE files** so-called "wiggle" files (in WIGGLE format) that contain useful information about the read coverage observed in the data. This format indicates for every base whether it is sufficiently covered in the tumor and normal to be sensitive enough to call mutations. (description from [gatk forum](http://gatkforums.broadinstitute.org/gatk/discussion/4231/what-is-the-output-of-mutect-and-how-should-i-interpret-it))
+
+* mutect-confident-somatic-variants-with-eff-clinvar-cosmiccod-cosmicnoncod.vcf: the vcf files with somatic variants annotated with clinvar and cosmic. dbSNP annotation comes from the bwa-mem-single-sample pipeline. 
+
+* mutect-variants.txt: the variants text file produced by mutect. See [this page](http://gatkforums.broadinstitute.org/gatk/discussion/4231/what-is-the-output-of-mutect-and-how-should-i-interpret-it) for a description of the columns in the file.
+
+* snpEff_summary.html & snpEff_genes.txt: output from snpeEff, see [this page](http://snpeff.sourceforge.net/SnpEff_manual.html#outputSummary) for a description this two files.
