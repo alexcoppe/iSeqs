@@ -95,7 +95,7 @@ for chr in range(startChr, endChr + 1):
 mutect_command_part1 = "docker run -it --rm -v $$(pwd):/data"
 mutect_command_part2 = "-v {}:/genome -v {}:/annotation alexcoppe/gatk -T MuTect2".format(referenceDir, annotationDir)
 mutect_command_part3 = "-R /genome/{} -I:tumor /data/t_chr{}.bam -I:normal /data/n_chr{}.bam".format(reference,chr,chr)
-mutect_command_part4 = "-L /annotation/{} -o $TARGET".format(exomeRegions)
+mutect_command_part4 = "-L /annotation/{} -o /data/$TARGET".format(exomeRegions)
 mutect_command_parts = [mutect_command_part1, mutect_command_part2, mutect_command_part3, mutect_command_part4]
 
 for chr in range(startChr, endChr + 1):
