@@ -8,6 +8,7 @@ A scons based pipeline for somatic variants identification in matched tumor-norm
 * [scons](http://scons.org/)
 * [SnpEff](http://snpeff.sourceforge.net/)
 * [Docker](http:/www.docker.com/)
+* [VCFtools](http://vcftools.sourceforge.net/)
 
 ### Annotation dependencies:
 

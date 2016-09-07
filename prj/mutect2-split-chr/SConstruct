@@ -144,7 +144,8 @@ for chr in range(startChr, endChr + 1):
 
 
 
+merge_cmd = "cat mutect_variants_chr*_pass_snpEFF_clinvar_cosmic_coding_non_coding.vcf | grep -v \"^#\" > $TARGET"
+merge = env.Command(["merged_variants.vcf"], [vcf_commands], merge_cmd)
 
-
-
-
+sort_vcf_cmd = "vcf-sort $SOURCE > $TARGET"
+sort_vcf = env.Command(["merged_variants_sorted.vcf"], [merge], sort_vcf_cmd)
