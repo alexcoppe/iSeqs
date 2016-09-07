@@ -1,6 +1,6 @@
 # Somatic variants identification with MuTect 2, bam splitted by chromosome
 
-A scons based pipeline for mapping somatic variants identification using MuTect2. Original BAM files is splitted by chromosome to parallelize the process.
+A scons based pipeline for somatic variants identification in matched tumor-normal pairs using MuTect2. Original .BAM files are splitted by chromosome to parallelize the process.
 
 <img src="mutect2-split-chr.png" width="900px">
 
@@ -13,7 +13,7 @@ A scons based pipeline for mapping somatic variants identification using MuTect2
 
 An annotation directory specified by the annotationDir argument containing the following file:
 
-* the dbSNP vcf and the vcf index e.g. All_20151104.vcf.idx.
+* [dbSNP](http://www.ncbi.nlm.nih.gov/SNP/) vcf and the vcf index e.g. All_20151104.vcf.idx.
 
 * [Clinvar](http://www.ncbi.nlm.nih.gov/clinvar/) vcf and clinvar vcf.tbi file
 
@@ -40,12 +40,17 @@ A directory specified by the referenceDir argument containing the following file
 ### List of parameters:
 
 
-| Argument Name        | Description|
-| ------------- |:-------------|
-| reference      | The fasta file with the human genome|
-| referenceDir      | Path to the directory containing the reference|
-| annotationDir | Path to to the directory containing annotation files|
-| exomeRegions | Exome sequencing kit bed file (located in annotationDir)|
+| Argument Name        | Description| Type |
+| ------------- |:-------------| :-------------|
+| reference      | The fasta file with the human genome| String |
+| referenceDir      | Path to the directory containing the reference| String |
+| annotationDir | Path to to the directory containing annotation files| String |
+| exomeRegions | Exome sequencing kit bed file (located in annotationDir)| String |
+| dbsnpVCF | The name of the vcf dbSNP vcf file (located in annotationDir)| String |
+| tumorBam | BAM obtained from "tumoral" sample| String |
+| normalBam | BAM obtained from "normal" sample| String |
+| startChr | First chromosome to analyze. Used to identify variants only in a subset of chromosomes | Int |
+| endChr | Last chromosomes to analyze. Used to identify variants only in a subset of chromosomes | Int |
 
 
 
