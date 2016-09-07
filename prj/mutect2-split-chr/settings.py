@@ -35,3 +35,6 @@ endChr = 6
 
 snpeffDir = "~/local/snpEff"
 snpeffGenomeVersion = "GRCh37.75"
+
+#Clinvar vcf
+clinvarVCF = "clinvar.vcf.gz"

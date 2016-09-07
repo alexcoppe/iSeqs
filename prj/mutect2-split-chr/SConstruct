@@ -76,7 +76,8 @@ arguments_dictionary["snpeffDir"] = snpeffDir
 snpeffGenomeVersion = ARGUMENTS.get("snpeffGenomeVersion", settings.snpeffGenomeVersion)
 arguments_dictionary["snpeffGenomeVersion"] = snpeffGenomeVersion
 
-
+clinvarVCF = ARGUMENTS.get("clinvarVCF", settings.clinvarVCF)
+arguments_dictionary["clinvarVCF"] = clinvarVCF
 
 
 ######################################################################################################
@@ -132,5 +133,11 @@ for chr in range(startChr, endChr + 1):
     ####### Annotation by snpEff #########################################
     snpEff_cmd = "java -Xmx4g -jar {snpeffDir}snpEff.jar eff -v {snpeffGenomeVersion} $SOURCE > $TARGET".format(**arguments_dictionary)
     snpEFF = env.Command(["mutect_variants_chr{chr}_pass_snpEFF.vcf".format(**arguments_dictionary)],[filter_pass_variants],snpEff_cmd)
+
+    ##### Clinvar annotation #############################################
+    clinvar_cmd = "java -Xmx4g -jar {snpeffDir}SnpSift.jar annotate {annotationDir}{clinvarVCF}  $SOURCE  > $TARGET".format(**arguments_dictionary)
+    clinvar = env.Command(["mutect_variants_chr{chr}_pass_snpEFF_clinvar.vcf".format(**arguments_dictionary)], [snpEFF], clinvar_cmd)
+
+
 
 
