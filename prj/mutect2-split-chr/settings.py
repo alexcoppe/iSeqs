@@ -26,8 +26,8 @@ exomeRegions = "nexterarapidcapture_exome_targetedregions_v1.2.bed"
 #maxMemory = 1000000000
 
 #The bam from the tumoreal sample
-tumorBam = "t_22.bam"
-normalBam = "n_22.bam"
+tumorBam = "ric.bam"
+normalBam = "rem.bam"
 
 
 startChr = 21
