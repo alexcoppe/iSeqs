@@ -69,6 +69,15 @@ arguments_dictionary["startChr"] = startChr
 endChr = int(ARGUMENTS.get("endChr", settings.endChr))
 arguments_dictionary["endChr"] = endChr
 
+snpeffDir = ARGUMENTS.get("snpeffDir",settings.snpeffDir)
+if not snpeffDir.endswith("/"): snpeffDir = snpeffDir + "/"
+arguments_dictionary["snpeffDir"] = snpeffDir
+
+snpeffGenomeVersion = ARGUMENTS.get("snpeffGenomeVersion", settings.snpeffGenomeVersion)
+arguments_dictionary["snpeffGenomeVersion"] = snpeffGenomeVersion
+
+
+
 
 ######################################################################################################
 ########################### Split input bams by chromosome ###########################################
@@ -111,6 +120,17 @@ mutect_command_parts = [mutect_command_part1, mutect_command_part2, mutect_comma
 
 for chr in range(startChr, endChr + 1):
     arguments_dictionary["chr"] = chr
-    mutect2 = env.Command(["mutect_variants_chr{}.vcf".format(chr)], [command_list], " ".join(mutect_command_parts).format(**arguments_dictionary))
+    mutect2 = env.Command(["mutect_variants_chr{chr}.vcf".format(**arguments_dictionary)], [command_list], " ".join(mutect_command_parts).format(**arguments_dictionary))
+
+    
+    ######## Filter PASS variants #########################################
+    filter_pass_variants_cmd = "grep -P  \"\\tPASS|^#\" $SOURCE  > $TARGET"
+    filter_pass_variants = env.Command(["mutect_variants_chr{chr}_pass.vcf".format(**arguments_dictionary)],[mutect2],filter_pass_variants_cmd)
+
+
+
+    ####### Annotation by snpEff #########################################
+    snpEff_cmd = "java -Xmx4g -jar {snpeffDir}snpEff.jar eff -v {snpeffGenomeVersion} $SOURCE > $TARGET".format(**arguments_dictionary)
+    snpEFF = env.Command(["mutect_variants_chr{chr}_pass_snpEFF.vcf".format(**arguments_dictionary)],[filter_pass_variants],snpEff_cmd)
 
 

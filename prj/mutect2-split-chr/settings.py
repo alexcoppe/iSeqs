@@ -30,5 +30,8 @@ tumorBam = "ric.bam"
 normalBam = "rem.bam"
 
 
-startChr = 21
-endChr = 22
+startChr = 5
+endChr = 6
+
+snpeffDir = "~/local/snpEff"
+snpeffGenomeVersion = "GRCh37.75"
