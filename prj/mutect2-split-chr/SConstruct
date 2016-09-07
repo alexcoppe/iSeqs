@@ -49,14 +49,8 @@ arguments_dictionary["annotationDir"] = annotationDir = annotationDir
 #dbsnpVCF = ARGUMENTS.get("dbsnpVCF", settings.dbsnpVCF)
 
 
-#reads1 = ARGUMENTS.get("reads1", settings.reads1)
-#reads2 = ARGUMENTS.get("reads2", settings.reads2)
-
 exomeRegions = ARGUMENTS.get("exomeRegions", settings.exomeRegions)
 arguments_dictionary["exomeRegions"] = exomeRegions
-
-#projectName = ARGUMENTS.get("projectName", settings.projectName )
-#sampleName = ARGUMENTS.get("sampleName", settings.sampleName)
 
 tumorBam = ARGUMENTS.get("tumorBam", settings.tumorBam)
 arguments_dictionary["tumorBam"] = tumorBam
@@ -78,6 +72,11 @@ arguments_dictionary["snpeffGenomeVersion"] = snpeffGenomeVersion
 
 clinvarVCF = ARGUMENTS.get("clinvarVCF", settings.clinvarVCF)
 arguments_dictionary["clinvarVCF"] = clinvarVCF
+
+cosmicCodingVCF = ARGUMENTS.get("cosmicCodingVCF", settings.cosmicCodingVCF)
+arguments_dictionary["cosmicCodingVCF"] = cosmicCodingVCF
+cosmicNonCodingVCF = ARGUMENTS.get("cosmicNonCodingVCF", settings.cosmicNonCodingVCF)
+arguments_dictionary["cosmicNonCodingVCF"] = cosmicNonCodingVCF
 
 
 ######################################################################################################
@@ -137,6 +136,17 @@ for chr in range(startChr, endChr + 1):
     ##### Clinvar annotation #############################################
     clinvar_cmd = "java -Xmx4g -jar {snpeffDir}SnpSift.jar annotate {annotationDir}{clinvarVCF}  $SOURCE  > $TARGET".format(**arguments_dictionary)
     clinvar = env.Command(["mutect_variants_chr{chr}_pass_snpEFF_clinvar.vcf".format(**arguments_dictionary)], [snpEFF], clinvar_cmd)
+
+    ##### #Cosmic coding variants annotation #############################
+    cosmic_coding_cmd = "java -Xmx4g -jar {snpeffDir}SnpSift.jar annotate {annotationDir}{cosmicCodingVCF} $SOURCE  > $TARGET".format(**arguments_dictionary)
+    cosmic_coding = env.Command(["mutect_variants_chr{chr}_pass_snpEFF_clinvar_cosmic_coding.vcf".format(**arguments_dictionary)], [clinvar], cosmic_coding_cmd)
+
+
+    cosmic_non_coding_cmd = "java -Xmx4g -jar {snpeffDir}SnpSift.jar annotate {annotationDir}{cosmicNonCodingVCF}  $SOURCE  > $TARGET".format(**arguments_dictionary)
+    cosmic_non_coding = env.Command(["mutect_variants_chr{chr}_pass_snpEFF_clinvar_cosmic_coding_non_coding.vcf".format(**arguments_dictionary)], [cosmic_coding], cosmic_non_coding_cmd)
+
+
+
 
 
 
