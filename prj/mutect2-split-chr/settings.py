@@ -8,12 +8,9 @@ annotationDir = "~/annotation/"
 exomeRegions = "nexterarapidcapture_exome_targetedregions_v1.2.bed"
 
 
-##The dbSNP vcf file
-#dbsnpVCF = "All_20151104.vcf"
+#The dbSNP vcf file
+dbsnpVCF = "All_20160527.vcf.gz"
 
-##Computational resources
-#processors = 8
-#maxMemory = 1000000000
 
 #The bam from the tumoreal sample
 tumorBam = "ric.bam"

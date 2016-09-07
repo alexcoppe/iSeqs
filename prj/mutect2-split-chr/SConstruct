@@ -2,9 +2,6 @@ import os
 import settings
 
 
-################################### Quick documentation ############################
-
-
 ################################ Scons Settings  #######################################
 
 #Scons settings Section
@@ -39,14 +36,12 @@ if not referenceDir.endswith("/"): referenceDir = referenceDir + "/"
 arguments_dictionary["referenceDir"] = referenceDir
 
 
-#gatkJarDir = ARGUMENTS.get("gatkJarDir", settings.gatkJarDir)
-#if not gatkJarDir.endswith("/"): gatkJarDir = gatkJarDir + "/"
-
 annotationDir = ARGUMENTS.get("annotationDir",settings.annotationDir)
 if not annotationDir.endswith("/"): annotationDir = annotationDir + "/"
 arguments_dictionary["annotationDir"] = annotationDir = annotationDir
 
-#dbsnpVCF = ARGUMENTS.get("dbsnpVCF", settings.dbsnpVCF)
+dbsnpVCF = ARGUMENTS.get("dbsnpVCF", settings.dbsnpVCF)
+arguments_dictionary["dbsnpVCF"] = dbsnpVCF
 
 
 exomeRegions = ARGUMENTS.get("exomeRegions", settings.exomeRegions)
@@ -111,11 +106,12 @@ for chr in range(startChr, endChr + 1):
 ########################### Run MuTect2 on every chromosome ##########################################
 ######################################################################################################
 
+vcf_commands = []
 
 mutect_command_part1 = "docker run -it --rm -v $$(pwd):/data"
 mutect_command_part2 = "-v {referenceDir}:/genome -v {annotationDir}:/annotation alexcoppe/gatk -T MuTect2"
 mutect_command_part3 = "-R /genome/{reference} -I:tumor /data/t_chr{chr}.bam -I:normal /data/n_chr{chr}.bam"
-mutect_command_part4 = "-L /annotation/{exomeRegions} -o /data/$TARGET"
+mutect_command_part4 = "-L /annotation/{exomeRegions} --dbsnp /annotation/{dbsnpVCF}  -o /data/$TARGET"
 mutect_command_parts = [mutect_command_part1, mutect_command_part2, mutect_command_part3, mutect_command_part4]
 
 for chr in range(startChr, endChr + 1):
@@ -144,6 +140,7 @@ for chr in range(startChr, endChr + 1):
 
     cosmic_non_coding_cmd = "java -Xmx4g -jar {snpeffDir}SnpSift.jar annotate {annotationDir}{cosmicNonCodingVCF}  $SOURCE  > $TARGET".format(**arguments_dictionary)
     cosmic_non_coding = env.Command(["mutect_variants_chr{chr}_pass_snpEFF_clinvar_cosmic_coding_non_coding.vcf".format(**arguments_dictionary)], [cosmic_coding], cosmic_non_coding_cmd)
+    vcf_commands.append(cosmic_non_coding)
 
 
 
