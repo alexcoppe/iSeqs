@@ -4,11 +4,10 @@ A scons based pipeline for mapping somatic variants identification using MuTect2
 
 <img src="mutect2-split-chr.png" width="900px">
 
-
 ### Software Dependencies:
 * [scons](http://scons.org/)
 * [SnpEff](http://snpeff.sourceforge.net/)
-
+* [Docker](http:/www.docker.com/)
 
 ### Annotation dependencies:
 
@@ -16,11 +15,11 @@ An annotation directory specified by the annotationDir argument containing the f
 
 * the dbSNP vcf and the vcf index e.g. All_20151104.vcf.idx.
 
-* clinvar vcf and clinvar vcf.tbi file
+* [Clinvar](http://www.ncbi.nlm.nih.gov/clinvar/) vcf and clinvar vcf.tbi file
 
-* cosmic coding variants vcf and vcf.tbi file
+* [Cosmic](http://cancer.sanger.ac.uk/cosmic) coding variants vcf and vcf.tbi file
 
-* cosmic non coding variants vcf and vcf.tbi file
+* [Cosmic](http://cancer.sanger.ac.uk/cosmic) non coding variants vcf and vcf.tbi file
 
 A directory specified by the referenceDir argument containing the following files:
 
@@ -32,8 +31,6 @@ A directory specified by the referenceDir argument containing the following file
 
 
 
-
-
 ### Running the pipeline:
 
 
@@ -41,6 +38,15 @@ A directory specified by the referenceDir argument containing the following file
 
 
 ### List of parameters:
+
+
+| Argument Name        | Description|
+| ------------- |:-------------|
+| reference      | The fasta file with the human genome|
+| referenceDir      | Path to the directory containing the reference|
+| annotationDir | Path to to the directory containing annotation files|
+| exomeRegions | Exome sequencing kit bed file (located in annotationDir)|
+
 
 
 ### Results:
