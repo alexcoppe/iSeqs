@@ -2,7 +2,7 @@
 
 A scons based pipeline for mapping somatic variants identification using MuTect2. Original BAM files is splitted by chromosome to parallelize the process.
 
-<img src="mutect2-split-chr.png" width="600px">
+<img src="mutect2-split-chr.png" width="900px">
 
 
 ### Software Dependencies:
