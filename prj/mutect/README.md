@@ -2,6 +2,10 @@
 
 A scons based pipeline for stomatic variants identification using [MuTect](https://www.broadinstitute.org/cancer/cga/mutect).
 
+<p align="center">
+  <img src="mutect.png" >
+</p>
+
 The following steps will be carried out:
 
 1. **MuTect**: somatic variants identification. The following parameters will be used:
