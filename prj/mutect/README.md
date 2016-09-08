@@ -1,6 +1,6 @@
 # Somatic variants identification with MuTect, scons pipeline
 
-A scons based pipeline for mapping Illumina paired end reads obtained from exome sequencing to the human genome.
+A scons based pipeline for stomatic variants identification using [MuTect](https://www.broadinstitute.org/cancer/cga/mutect).
 
 The following steps will be carried out:
 
@@ -82,31 +82,21 @@ scons referenceDir=~/reference mutectDir=~/local/mutect snpeffDir=~/local/snpEFF
 
 ### List of parameters:
 
-* reference:  the file name of the fasta reference file (e.g. reference.fas)
-
-* referenceDir: the path to the directory containing the reference sequence (e.g. ~/genome ) 
-
-* annotationDir: the path to the directory with annotation files (e.g. ~/annotation )
-
-* exomeRegions: the bed file with exome caputered regions. This file must be located in the annotaion directory.
-
-* mutectDir: the path to the directory to containing the muTect-1.1.5.jar file.
-
-* dbsnpVCF: the name of the vcf file downloaded from dbSNP database.
-
-* clinvarVCF: the name of the vcf file downloaded from Clinvar database.
-
-* cosmicCodingVCF: the name of the vcf file with coding variants downloaded from Cosmic database.
-
-* cosmicNonCodingVCF: the name of the vcf file with non coding variants downloaded from Cosmic database.
-
-* bamN: the bam file from the normal matched sample.
-
-* bamT: the bam file from the tumor matched sample.
-
-* snpeffDir: the directory containgin the snpEff.jar and SnpSift.jar files.
-
-* snpeffGenomeVersion: the version of the genome to be used by snpEff (the one specified with the -v option to snpEff.jar).
+| Argument Name        | Description| Type |
+| ------------- |:-------------| :-------------|
+| reference      | The fasta file with the human genome| String |
+| referenceDir | Path to the directory containing the reference sequence (e.g. ~/genome ) | String |
+| annotationDir | Path to the directory with annotation files (e.g. ~/annotation ) | String |
+| exomeRegions | Bed file with exome caputered regions. This file must be located in the annotaion directory | String |
+| mutectDir | Path to the directory to containing the muTect-1.1.5.jar file | String |
+| dbsnpVCF | Name of the vcf file downloaded from dbSNP database | String |
+| clinvarVCF | Name of the vcf file downloaded from Clinvar database | String |
+| cosmicCodingVCF | Name of the vcf file with coding variants downloaded from Cosmic database | String |
+| cosmicNonCodingVCF | Name of the vcf file with non coding variants downloaded from Cosmic database | String |
+| bamN | Bam file from the normal matched sample | String |
+| bamT | Bam file from the tumor matched sample | String |
+| snpeffDir | Path to the directory containgin the snpEff.jar and SnpSift.jar files | String |
+| snpeffGenomeVersion | The version of the genome to be used by snpEff (the one specified with the -v option to snpEff.jar) | String |
 
 SnpEff software should be already installed and configured.
 
