@@ -8,7 +8,6 @@ A scons based pipeline for somatic variants identification in matched tumor-norm
 * [scons](http://scons.org/)
 * [SnpEff](http://snpeff.sourceforge.net/)
 * [Docker](http:/www.docker.com/)
-* [VCFtools](http://vcftools.sourceforge.net/)
 
 ### Annotation dependencies:
 
@@ -34,8 +33,26 @@ A directory specified by the referenceDir argument containing the following file
 
 ### Running the pipeline:
 
+1. Copy SConstruct, settings.py to the directory where the analysis will be run.
+
+2. Parameters can be set editing the settings.py file or specifiying arguments to scons. In this case parameters from the settings.py file will be ovverriden, see examples below.
+
+2. To start an analysis just launch the scons command from the directory containing the SConstruct file. 
+
 
 ### Examples:
+```bash
+
+#Launch the pipeline using all parameters from the settings.py file
+scon
+
+#Explicitly specify the directory containing the fasta file of the reference genome
+scons referenceDir=~/reference
+
+#Analyze only chromosomes 5,6 and 7
+scons startChr=5 endChr=7
+
+```
 
 
 ### List of parameters:
@@ -51,8 +68,17 @@ A directory specified by the referenceDir argument containing the following file
 | tumorBam | BAM obtained from "tumoral" sample| String |
 | normalBam | BAM obtained from "normal" sample| String |
 | startChr | First chromosome to analyze. Used to identify variants only in a subset of chromosomes | Int |
-| endChr | Last chromosomes to analyze. Used to identify variants only in a subset of chromosomes | Int |
+| endChr | Last chromosome to analyze. Used to identify variants only in a subset of chromosomes | Int |
+| snpeffDir | Path to directory containing the SnpEff jar file | String |
+| snpeffGenomeVersion |  The version of the genome to be used by snpEff (the one specified with the -v option to snpEff.jar) | String |
+|clinvarVCF | Name of the vcf file downloaded from Clinvar database | String |
+| cosmicCodingVCF | Name of the vcf file with coding variants downloaded from Cosmic database | String |
+| cosmicNonCodingVCF | Name of the vcf file with non coding variants downloaded from Cosmic database | String |
 
 
 
 ### Results:
+
+* The somatic variants for each chromosome will be in a file called mutect_variants_chrXX_pass_snpEFF_clinvar_cosmic_coding_non_coding.vcf with XX replaced by chromosome name
+
+* merged_variants_sorted.vcf: somatic variants for all analyzed chromosomes
