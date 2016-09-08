@@ -59,27 +59,19 @@ scons referenceDir=~/reference gatkJarDir=~/local/GATK sampleName=patient1
 
 ### List of parameters:
 
-* reference:  the file name of the fasta reference file (e.g. reference.fas)
-
-* referenceDir: the path to the directory containing the reference sequence (e.g. ~/genome ) 
-
-* reads1 & reads2: the the name of the fastq files containing the paired end reads.
-
-* annotationDir: the path to the directory with annotation files (e.g. ~/annotation )
-
-* exomeRegions: the bed file with exome caputered regions. This file must be located in the annotaion directory.
-
-* gatkJarDir: the path to the directory to containing the GenomeAnalysisTK.jar file.
-
-* dbsnpVCF: the name of the vcf file downloaded from dbSNP database.
-
-* projectName: a name for the project
-
-* sampleName: the sample's name
-
-* processors: number of CPUs to be used
-
-* maxMemory: max memory to be used (in bytes)
+| Argument Name        | Description| Type |
+| ------------- |:-------------| :-------------|
+| reference      | The fasta file with the human genome| String |
+| referenceDir | Path to the directory containing the reference sequence (e.g. ~/genome ) | String |
+| reads1 & reads2 | The the name of the fastq files containing the paired end reads | String |
+| annotationDir | Path to the directory with annotation files (e.g. ~/annotation ) | String |
+| exomeRegions| The bed file with exome caputered regions. This file must be located in the annotaion directory | String |
+| gatkJarDir | The path to the directory to containing the GenomeAnalysisTK.jar file | String |
+| dbsnpVCF | The name of the vcf file downloaded from dbSNP database | String |
+| projectName |  A name for the project | String |
+| sampleName | The sample's name | String |
+| processors | Number of CPUs to be used | Int |
+| maxMemory | Max memory to be used (in bytes) | Int |
 
 
 ### Results:
