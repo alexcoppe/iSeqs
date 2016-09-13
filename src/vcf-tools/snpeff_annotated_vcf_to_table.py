@@ -17,6 +17,7 @@ def build_genotype_dictionary(format_string, genotype_string):
     values = genotype_string.split(":")
     return dict(zip(keys, values))
     
+#Given a data line in a vcf, returns a dictionary with the different fields
 def get_vcf_fixed_fields(vcf_line):
     splitted = vcf_line.split()
     fields = {}
@@ -54,28 +55,39 @@ if __name__ == "__main__":
     impacts = args.impacts.split(",")
 
 
-    variant_columns = ["chr", "pos", "rs", "ref"]
+    #The names of the first 4 column
+    variant_column_names = ["chr", "pos", "rs", "ref"]
 
-    header = "\t".join(variant_columns + transcript_properties)
+    #Add columns names of transcript features to the header
+    header = "\t".join(variant_column_names + transcript_properties)
     if patient: header = "patient\t" + header
 
     printed_header = 0
     for line in  args.vcf:
         if not line.startswith("#"):
+
             variant_fields = get_vcf_fixed_fields(line)
+            #The FORMAT field e.g. GT:AD:BQ:DP:FA:SS
             format_field = variant_fields.get("format_field")
+            #A list containing the sample fields
             sample_fields = variant_fields.get("sample_fields")
 
             sample_index = 1
-            sample_columns = []
+            all_samples_data = []
             for sample in sample_fields:
+                #The format dictionary, like {'GT': '0', 'AD': '100,1', 'SS': '0', 'FA': '9.901e-03', 'BQ': '.', 'DP': '101'}
                 format_dictionary =  build_genotype_dictionary(format_field, sample_fields[0])
                 format_keys = format_dictionary.keys()
+                #A string with data from one sample separated by tabs. For example:
+                #0       26,0    0       0.00    .       26
                 sample_string = "\t".join(["{" + el + "}" for el in format_keys]).format(**format_dictionary)
-                sample_columns.append(sample_string)
+                #Add data from one sample to the list that contains data for all samples
+                all_samples_data.append(sample_string)
+
+                #Add column names for the genotype data for the current sample
                 header = header + "\tsample{}_".format(sample_index) + "\tsample{}_".format(sample_index).join(format_keys)
                 sample_index += 1
-            samples_string = "\t".join(sample_columns)
+            all_concatenated_samples = "\t".join(all_samples_data)
 
 
             transcripts = get_transcripts_from_info_field(line)
@@ -87,13 +99,12 @@ if __name__ == "__main__":
 
             #If the VCF has not been annotated with SnpEff
             if not transcripts:
-                variant_columns = ["chr", "pos", "rs", "ref", "alt"]
-                total_columns = len(variant_columns + transcript_properties[1:])
+                variant_column_names = ["chr", "pos", "rs", "ref", "alt"]
                 variant_string = "{chr}\t{pos}\t{rs}\t{ref}\t{alt}".format(**variant_fields)
-                print variant_string + "\t" + "\t".join(["NA"] * (len(transcript_properties) -1) ) + "\t" + samples_string
+                print variant_string + "\t" + "\t".join(["NA"] * (len(transcript_properties) -1) ) + "\t" + all_concatenated_samples
             #If the VCF has been annotated with SnpEff
             else:
                 for transcript in transcripts:
                     transcript_string = "\t".join( ["{" + el + "}" for el in transcript_properties] ).format(**transcript)
-                    print "\t".join([variant_string, transcript_string, samples_string])
+                    print "\t".join([variant_string, transcript_string, all_concatenated_samples])
 
