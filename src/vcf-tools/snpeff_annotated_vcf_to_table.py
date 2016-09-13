@@ -89,13 +89,11 @@ if __name__ == "__main__":
                 sample_index += 1
             all_concatenated_samples = "\t".join(all_samples_data)
 
-
-            transcripts = get_transcripts_from_info_field(line)
-            variant_string = "{chr}\t{pos}\t{rs}\t{ref}".format(**variant_fields)
-
             if not printed_header:
                 print header
                 printed_header = 1
+
+            transcripts = get_transcripts_from_info_field(line)
 
             #If the VCF has not been annotated with SnpEff
             if not transcripts:
@@ -104,6 +102,7 @@ if __name__ == "__main__":
                 print variant_string + "\t" + "\t".join(["NA"] * (len(transcript_properties) -1) ) + "\t" + all_concatenated_samples
             #If the VCF has been annotated with SnpEff
             else:
+                variant_string = "{chr}\t{pos}\t{rs}\t{ref}".format(**variant_fields)
                 for transcript in transcripts:
                     transcript_string = "\t".join( ["{" + el + "}" for el in transcript_properties] ).format(**transcript)
                     print "\t".join([variant_string, transcript_string, all_concatenated_samples])
