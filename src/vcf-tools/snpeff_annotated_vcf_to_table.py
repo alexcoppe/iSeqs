@@ -29,6 +29,7 @@ def get_vcf_fixed_fields(vcf_line):
 
 def get_transcripts_from_info_field(line, impacts=[""]):
     info_field = line.split()[7]
+    pos = line.split()[1]
     transcripts_string = [el for el in info_field.split(";") if el.startswith("ANN=")]
     transcripts = []
     if transcripts_string == []:
@@ -63,8 +64,13 @@ if __name__ == "__main__":
     if patient: header = "patient\t" + header
 
     printed_header = 0
+    
+    snp_eff_annotated = 0
     for line in  args.vcf:
         if not line.startswith("#"):
+            if "ANN=" in line:
+                snp_eff_annotated = 1
+            
 
             variant_fields = get_vcf_fixed_fields(line)
             #The FORMAT field e.g. GT:AD:BQ:DP:FA:SS
@@ -93,10 +99,10 @@ if __name__ == "__main__":
                 print header
                 printed_header = 1
 
-            transcripts = get_transcripts_from_info_field(line)
+            transcripts = get_transcripts_from_info_field(line, impacts=impacts)
 
             #If the VCF has not been annotated with SnpEff
-            if not transcripts:
+            if not transcripts and not snp_eff_annotated:
                 variant_column_names = ["chr", "pos", "rs", "ref", "alt"]
                 variant_string = "{chr}\t{pos}\t{rs}\t{ref}\t{alt}".format(**variant_fields)
                 print variant_string + "\t" + "\t".join(["NA"] * (len(transcript_properties) -1) ) + "\t" + all_concatenated_samples
