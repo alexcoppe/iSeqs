@@ -103,7 +103,6 @@ if __name__ == "__main__":
 
             #If the VCF has not been annotated with SnpEff
             if not transcripts and not snp_eff_annotated:
-                variant_column_names = ["chr", "pos", "rs", "ref", "alt"]
                 variant_string = "{chr}\t{pos}\t{rs}\t{ref}\t{alt}".format(**variant_fields)
                 output =  variant_string + "\t" + "\t".join(["NA"] * (len(transcript_properties) -1) ) + "\t" + all_concatenated_samples
                 if patient:
