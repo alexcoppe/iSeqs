@@ -135,10 +135,13 @@ def getStuff(d,k):
     return d.get(k)
 
 #Print tabulated version of from_splitted_variants_to_transcripts function
-def print_transcripts(transcripts, fields = ["variant:chr", "variant:pos", "variant:ref",  "variant:alt" , "transcript:impact", "samples:AD", "samples:DP", "transcript:gene_name", "transcript:feature"]):
+def print_transcripts(transcripts, fields = ["variant:chr", "variant:pos", "variant:ref",  "samples:AD", "samples:DP"], patient=""):
     lines_to_print = []
     for transcript in transcripts:
-        stuff_to_print_original_type = [reduce(getStuff, field.split(":"), transcript) for field in fields ]
+        if patient:
+            stuff_to_print_original_type = [patient] + [reduce(getStuff, field.split(":"), transcript) for field in fields ]
+        else:
+            stuff_to_print_original_type = [reduce(getStuff, field.split(":"), transcript) for field in fields ]
         print "\t".join([str(el) if not isinstance(el, list) else "\t".join([str(subel) for subel in el]) for el in stuff_to_print_original_type])
         
 
@@ -181,13 +184,15 @@ def get_vcf_fixed_fields(vcf_line):
     return fields
 
 
-def print_header(vcf, fields):
+def print_header(vcf, fields, patient=""):
     for line in vcf:
         if not line.startswith("#"):
             variant_fields = get_vcf_fixed_fields(line)
             number_of_samples = len( variant_fields.get("sample_fields") )
             break
     header = []
+    if patient:
+        header.append("Patient")
     for field_subfield in fields:
         field,subfield = field_subfield.split(":")
         if field == "samples":
@@ -221,8 +226,9 @@ if __name__ == "__main__":
     else:
         fields = ["variant:chr", "variant:pos", "variant:ref",  "variant:alt" , "transcript:impact", "samples:AD", "samples:DP", "transcript:gene_name", "transcript:feature"]
 
+
     if not list_fields_option:
-        print_header(args.vcf, fields)
+        print_header(args.vcf, fields, patient=args.patient)
 
     for line in  args.vcf:
         if not line.startswith("#"):
@@ -232,4 +238,4 @@ if __name__ == "__main__":
                 list_fields(transcripts_with_variants)
                 sys.exit()
 
-            print_transcripts(transcripts_with_variants, fields)
+            print_transcripts(transcripts_with_variants, fields, patient=args.patient)
