@@ -135,14 +135,17 @@ def getStuff(d,k):
     return d.get(k)
 
 #Print tabulated version of from_splitted_variants_to_transcripts function
-def print_transcripts(transcripts, fields = ["variant:chr", "variant:pos", "variant:ref",  "samples:AD", "samples:DP"], patient=""):
+def print_transcripts(transcripts, fields = ["variant:chr", "variant:pos", "variant:ref",  "samples:AD", "samples:DP"], patient="", impacts=""):
     lines_to_print = []
     for transcript in transcripts:
         if patient:
             stuff_to_print_original_type = [patient] + [reduce(getStuff, field.split(":"), transcript) for field in fields ]
         else:
             stuff_to_print_original_type = [reduce(getStuff, field.split(":"), transcript) for field in fields ]
-        print "\t".join([str(el) if not isinstance(el, list) else "\t".join([str(subel) for subel in el]) for el in stuff_to_print_original_type])
+
+        impact = transcript.get("transcript").get("impact")
+        if impact in impacts or impacts == "":
+            print "\t".join([str(el) if not isinstance(el, list) else "\t".join([str(subel) for subel in el]) for el in stuff_to_print_original_type])
         
 
 def list_fields(transcripts):
@@ -220,6 +223,7 @@ if __name__ == "__main__":
     patient = args.patient
     impacts = args.impacts.split(",")
     list_fields_option = args.list
+
     
     if args.fields:
         fields = args.fields.split(",")
@@ -238,4 +242,4 @@ if __name__ == "__main__":
                 list_fields(transcripts_with_variants)
                 sys.exit()
 
-            print_transcripts(transcripts_with_variants, fields, patient=args.patient)
+            print_transcripts(transcripts_with_variants, fields, patient=args.patient, impacts=impacts)
