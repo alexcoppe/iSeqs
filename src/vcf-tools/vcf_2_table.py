@@ -143,8 +143,11 @@ def print_transcripts(transcripts, fields = ["variant:chr", "variant:pos", "vari
         else:
             stuff_to_print_original_type = [reduce(getStuff, field.split(":"), transcript) for field in fields ]
 
-        impact = transcript.get("transcript").get("impact")
-        if impact in impacts or impacts == "":
+        if transcript.get("transcript"):
+            impact = transcript.get("transcript").get("impact")
+        else:
+            impact = "NA"
+        if impact in impacts or impacts == [""]:
             print "\t".join([str(el) if not isinstance(el, list) else "\t".join([str(subel) for subel in el]) for el in stuff_to_print_original_type])
         
 
