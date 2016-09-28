@@ -220,6 +220,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--impacts", help="List of impacts to be filtered, separated by ,", required=False, type=str, default="")
     parser.add_argument("-e", "--fields", help="Fields from the vcf to be printed. Use -l option to list the available fields. Fields should be specified as \"field:subfield,field:subfield:.....\"", required=False, type=str, default="")
     parser.add_argument("-l", "--list", help="List available fields to print. To use in combination with the -f option to inspect the fields and subfields available in the vcf", required=False, action="store_true")
+    parser.add_argument("-H", "--header", help="Display header line", required=False, action="store_true")
 
     args = parser.parse_args()
 
@@ -234,7 +235,7 @@ if __name__ == "__main__":
         fields = ["variant:chr", "variant:pos", "variant:ref",  "variant:alt" , "transcript:impact", "samples:AD", "samples:DP", "transcript:gene_name", "transcript:feature"]
 
 
-    if not list_fields_option:
+    if not list_fields_option and args.header:
         print_header(args.vcf, fields, patient=args.patient)
 
     for line in  args.vcf:
