@@ -1,5 +1,4 @@
 import os
-import settings
 
 
 ################################### Quick documentation ############################
@@ -15,15 +14,28 @@ import settings
 # - snpEff.config
 
 
-
-
 ################################ Scons Settings  #######################################
 
+vars = Variables("settings.py")
+vars.Add('reference', 'The genome reference in fasta format', "reference.fa")
+vars.Add('referenceDir', 'The path to the directory containing the reference file', "./annotation")
+vars.Add('reads1', 'The the name of the fastq files with the first pair of paired end reads', "reads1.fastq.gz")
+vars.Add('reads2', 'The the name of the fastq files with the second pair of paired end reads', "reads2.fastq.gz")
+vars.Add('removeNs', 'y/n if Ns if should trim flanking Ns from reads', "n")
+vars.Add('removeSoftClipped', 'y/n if soft clipped reads should be removed from bam file', "n")
+vars.Add('sampleName', 'An identifier for the sample', "sample")
+vars.Add('projectName', 'A name for the project', "project")
+vars.Add('exomeRegions', 'The bed file with exome caputered regions. This file must be located in the annotaion directory', "nexterarapidcapture_exome_targetedregions_v1.2.bed")
+vars.Add('dbsnpVCF', 'The name of the vcf file downloaded from dbSNP database', "All_20151104.vcf")
+vars.Add('annotationDir', 'Path to the directory with annotation files', "~/annotation")
+vars.Add('gatkJarDir', 'The path to the directory to containing the GenomeAnalysisTK.jar file', "~/local/GenomeAnalysisTK/")
+vars.Add('processors', 'Number of CPUs to be used', "2")
+vars.Add('maxMemory', 'Max memory to be used (in bytes)', "1000000000")
+
 #Scons settings Section
-env = Environment(ENV = os.environ, SHELL = '/bin/bash')
+env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
 env.AppendENVPath('PATH', os.getcwd())
 Decider('timestamp-newer')
-
 
 
 ######################################################################################################
@@ -31,7 +43,7 @@ Decider('timestamp-newer')
 ######################################################################################################
 
 #Filename of the reference human genome
-reference = ARGUMENTS.get("reference", settings.reference)
+reference = ARGUMENTS.get("reference", env["reference"])
 
 #The reference directory should contain the fasta file with the human genome and the index build 
 #by bwa with the bwa index <genome.fasta> command (it produces the a bunch of files with these extensions:
@@ -43,31 +55,32 @@ reference = ARGUMENTS.get("reference", settings.reference)
 
 # - reference.fa.fai obtained by samtools faidx <reference.fa>
 # - reference.dict obtained by java -jar CreateSequenceDictionary.jar R=reference.fasta O=reference.dict
-referenceDir = ARGUMENTS.get("referenceDir", settings.referenceDir)
+referenceDir = ARGUMENTS.get("referenceDir", env["referenceDir"])
 if not referenceDir.endswith("/"): referenceDir = referenceDir + "/"
 
-
-gatkJarDir = ARGUMENTS.get("gatkJarDir", settings.gatkJarDir)
+gatkJarDir = ARGUMENTS.get("gatkJarDir", env["gatkJarDir"])
 if not gatkJarDir.endswith("/"): gatkJarDir = gatkJarDir + "/"
 
-annotationDir = ARGUMENTS.get("annotationDir",settings.annotationDir)
+annotationDir = ARGUMENTS.get("annotationDir", env["annotationDir"])
 if not annotationDir.endswith("/"): annotationDir = annotationDir + "/"
 
-dbsnpVCF = ARGUMENTS.get("dbsnpVCF", settings.dbsnpVCF)
+dbsnpVCF = ARGUMENTS.get("dbsnpVCF", env["dbsnpVCF"])
 
+reads1 = ARGUMENTS.get("reads1", env["reads1"])
+reads2 = ARGUMENTS.get("reads2", env["reads2"])
 
-reads1 = ARGUMENTS.get("reads1", settings.reads1)
-reads2 = ARGUMENTS.get("reads2", settings.reads2)
+exomeRegions = ARGUMENTS.get("exomeRegions", env["exomeRegions"])
 
-exomeRegions = ARGUMENTS.get("exomeRegions", settings.exomeRegions)
+projectName = ARGUMENTS.get("projectName", env["projectName"] )
+sampleName = ARGUMENTS.get("sampleName", env["sampleName"])
 
-projectName = ARGUMENTS.get("projectName", settings.projectName )
-sampleName = ARGUMENTS.get("sampleName", settings.sampleName)
+removeNs = ARGUMENTS.get("removeNs", env["removeNs"])
 
+removeSoftClipped = ARGUMENTS.get("removeSoftClipped", env["removeSoftClipped"])
 
-removeNs = ARGUMENTS.get("removeNs", settings.removeNs)
+processors = ARGUMENTS.get("processors", env["processors"])
 
-removeSoftClipped = ARGUMENTS.get("removeSoftClipped", settings.removeSoftClipped)
+maxMemory = ARGUMENTS.get("maxMemory", env["maxMemory"])
 
 
 ######################################################################################################
@@ -104,14 +117,14 @@ else:
 #Remove reads with flag 256 (not primary alignment)
 
 if removeSoftClipped == "y":
-    bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} <(zcat {}) <(zcat {}) |  samtools view -S -h -q 1 -f 2 -F 256 - | python sam_remove_soft_clipping.py | samtools view -h -Sb - > $TARGET".format(sampleName, "exome", sampleName, settings.processors, referenceDir, reference, reads1, reads2 )
+    bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} <(zcat {}) <(zcat {}) |  samtools view -S -h -q 1 -f 2 -F 256 - | python sam_remove_soft_clipping.py | samtools view -h -Sb - > $TARGET".format(sampleName, "exome", sampleName, processors, referenceDir, reference, reads1, reads2 )
 else:
-    bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} <(zcat {}) <(zcat {}) |  samtools view -Sb -h -q 1 -f 2 -F 256 -  > $TARGET".format(sampleName, "exome", sampleName, settings.processors, referenceDir, reference, reads1, reads2 )
+    bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} <(zcat {}) <(zcat {}) |  samtools view -Sb -h -q 1 -f 2 -F 256 -  > $TARGET".format(sampleName, "exome", sampleName, processors, referenceDir, reference, reads1, reads2 )
 bwa = env.Command(["mapping.bam"], [removeNsFromReads], bwaCMD )
 
 
 
-sortBamCMD = "samtools sort -o -m {} $SOURCE unused_parameter  > $TARGET".format(settings.maxMemory)
+sortBamCMD = "samtools sort -o -m {} $SOURCE unused_parameter  > $TARGET".format(maxMemory)
 sortBam = env.Command(["mapping-sorted.bam"], [bwa], sortBamCMD)
 
 
@@ -127,9 +140,9 @@ pcrRemovalIndexCMD = "samtools index $SOURCE"
 pcrRemovalIndex = env.Command(["mapping-sorted-rmdup.bam.bai"], [pcrRemoval], pcrRemovalIndexCMD)
 
 
-######################################################################################################
-########################### Local realignment around indels ##########################################
-######################################################################################################
+#######################################################################################################
+############################ Local realignment around indels ##########################################
+#######################################################################################################
 
 
 #Table of putative indels
@@ -142,12 +155,12 @@ indelRealignerCmd = "java -Xmx4g -jar {}GenomeAnalysisTK.jar -R {}".format(gatkJ
 indelRealignment = env.Command(["mapping-sorted-rmdup-realigned.bam"], [pcrRemoval, putativeIndelsTable], indelRealignerCmd)
 
 
-######################################################################################################
-########################### Quality score recalibration ##############################################
-######################################################################################################
+#######################################################################################################
+############################ Quality score recalibration ##############################################
+#######################################################################################################
 
 recalibrationTableCMD = "java -Xmx4g -jar {}GenomeAnalysisTK.jar -T BaseRecalibrator -I $SOURCE -R {}{}  -knownSites {}{} -o $TARGET".format(gatkJarDir,referenceDir,reference,annotationDir,dbsnpVCF)
-recalibrationTable = env.Command(["{}.grp".format(settings.projectName)], [indelRealignment], recalibrationTableCMD)
+recalibrationTable = env.Command(["{}.grp".format(projectName)], [indelRealignment], recalibrationTableCMD)
 
 
 renderReadsCMD = "java -jar {}GenomeAnalysisTK.jar -T PrintReads -R {}{}".format(gatkJarDir,referenceDir,reference) + " -I ${SOURCES[0]} -BQSR ${SOURCES[1]} -o $TARGET"
@@ -155,9 +168,9 @@ renderReads = env.Command(["mapping-sorted-rmdup-realigned-recal.bam"], [indelRe
 
 
 
-######################################################################################################
-###########################  Statistics ##############################################################
-######################################################################################################
+#######################################################################################################
+############################  Statistics ##############################################################
+#######################################################################################################
 
 coverageHistCMD = "bedtools coverage -hist -abam $SOURCE -b {}{}".format(annotationDir,exomeRegions) + " | grep ^all > $TARGET"
 coverageHist = env.Command(["coverage-hist.txt"], [renderReads], coverageHistCMD)
