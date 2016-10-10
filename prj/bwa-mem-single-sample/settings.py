@@ -24,3 +24,7 @@ sampleName = "m1"
 #Computational resources
 processors = 8
 maxMemory = 1000000000
+
+removeNs = "y"
+
+removeSoftClipped = "n"

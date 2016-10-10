@@ -65,6 +65,25 @@ projectName = ARGUMENTS.get("projectName", settings.projectName )
 sampleName = ARGUMENTS.get("sampleName", settings.sampleName)
 
 
+removeNs = ARGUMENTS.get("removeNs", settings.removeNs)
+
+removeSoftClipped = ARGUMENTS.get("removeSoftClipped", settings.removeSoftClipped)
+
+
+######################################################################################################
+########################### Remove Ns from reads #####################################################
+######################################################################################################
+
+removeNsFromReadsCMD = "cutadapt -A XXX --trim-n -o ${TARGETS[0]} -p ${TARGETS[1]} ${SOURCES[0]} ${SOURCES[1]}"
+if removeNs == "y":
+    removeNsFromReads = env.Command(["r1_no_Ns.fastq.gz", "r2_no_Ns.fastq.gz"], [reads1,reads2], removeNsFromReadsCMD)
+    reads1 = "r1_no_Ns.fastq.gz"
+    reads2 = "r2_no_Ns.fastq.gz"
+else:
+    removeNsFromReads = env.Command([], [], "")
+
+
+
 ######################################################################################################
 ########################### BWA MEM Alignment ########################################################
 ######################################################################################################
@@ -84,8 +103,11 @@ sampleName = ARGUMENTS.get("sampleName", settings.sampleName)
 #by -f 2)
 #Remove reads with flag 256 (not primary alignment)
 
-bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} <(zcat {}) <(zcat {}) |  samtools view -S -h -q 2 -f 2 -F 256 - | python sam_remove_soft_clipping.py | samtools view -h -Sb - > $TARGET".format(settings.sampleName, "exome", settings.sampleName, settings.processors, referenceDir, reference, settings.reads1, settings.reads2 )
-bwa = env.Command(["mapping.bam"], [], bwaCMD )
+if removeSoftClipped == "y":
+    bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} <(zcat {}) <(zcat {}) |  samtools view -S -h -q 1 -f 2 -F 256 - | python sam_remove_soft_clipping.py | samtools view -h -Sb - > $TARGET".format(sampleName, "exome", sampleName, settings.processors, referenceDir, reference, reads1, reads2 )
+else:
+    bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} <(zcat {}) <(zcat {}) |  samtools view -Sb -h -q 1 -f 2 -F 256 -  > $TARGET".format(sampleName, "exome", sampleName, settings.processors, referenceDir, reference, reads1, reads2 )
+bwa = env.Command(["mapping.bam"], [removeNsFromReads], bwaCMD )
 
 
 
