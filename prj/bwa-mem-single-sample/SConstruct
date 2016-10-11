@@ -1,7 +1,7 @@
 import os
 
 
-################################### Quick documentation ############################
+################################## Quick documentation ############################
 
 #Files needed by pipeline (better symlink them):
 # - GenomeAnalysisTK.jar
@@ -18,7 +18,7 @@ import os
 
 vars = Variables("settings.py")
 vars.Add('reference', 'The genome reference in fasta format', "reference.fa")
-vars.Add('referenceDir', 'The path to the directory containing the reference file', "./annotation")
+vars.Add('referenceDir', 'The path to the directory containing the reference file', "~/annotation")
 vars.Add('reads1', 'The the name of the fastq files with the first pair of paired end reads', "reads1.fastq.gz")
 vars.Add('reads2', 'The the name of the fastq files with the second pair of paired end reads', "reads2.fastq.gz")
 vars.Add('removeNs', 'y/n if Ns if should trim flanking Ns from reads', "n")
@@ -117,9 +117,9 @@ else:
 #Remove reads with flag 256 (not primary alignment)
 
 if removeSoftClipped == "y":
-    bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} <(zcat {}) <(zcat {}) |  samtools view -S -h -q 1 -f 2 -F 256 - | python sam_remove_soft_clipping.py | samtools view -h -Sb - > $TARGET".format(sampleName, "exome", sampleName, processors, referenceDir, reference, reads1, reads2 )
+    bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} ".format(sampleName, "exome", sampleName, processors, referenceDir, reference) + "<(zcat ${SOURCES[0]}) <(zcat ${SOURCES[1]}) |  samtools view -S -h -q 1 -f 2 -F 256 - | python sam_remove_soft_clipping.py | samtools view -h -Sb - > $TARGET"
 else:
-    bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} <(zcat {}) <(zcat {}) |  samtools view -Sb -h -q 1 -f 2 -F 256 -  > $TARGET".format(sampleName, "exome", sampleName, processors, referenceDir, reference, reads1, reads2 )
+    bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} ".format(sampleName, "exome", sampleName, processors, referenceDir, reference) + "<(zcat ${SOURCES[0]}) <(zcat ${SOURCES[1]}) |  samtools view -Sb -h -q 1 -f 2 -F 256 -  > $TARGET"
 bwa = env.Command(["mapping.bam"], [removeNsFromReads], bwaCMD )
 
 
@@ -165,7 +165,6 @@ recalibrationTable = env.Command(["{}.grp".format(projectName)], [indelRealignme
 
 renderReadsCMD = "java -jar {}GenomeAnalysisTK.jar -T PrintReads -R {}{}".format(gatkJarDir,referenceDir,reference) + " -I ${SOURCES[0]} -BQSR ${SOURCES[1]} -o $TARGET"
 renderReads = env.Command(["mapping-sorted-rmdup-realigned-recal.bam"], [indelRealignment, recalibrationTable], renderReadsCMD)
-
 
 
 #######################################################################################################

@@ -77,7 +77,7 @@ scons referenceDir=~/reference gatkJarDir=~/local/GATK sampleName=patient1
 | processors | Number of CPUs to be used | Int |
 | maxMemory | Max memory to be used (in bytes) | Int |
 | removeNs | If Ns if should trim flanking Ns from reads | String (y/n) |
-| removeSoftClipped | If soft clipped reads should be removed from bam file' | String (y/n |
+| removeSoftClipped | If soft clipped reads should be removed from bam file' | String (y/n) |
 
 
 ### Results:
