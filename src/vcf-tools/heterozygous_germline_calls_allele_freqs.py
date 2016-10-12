@@ -28,7 +28,10 @@ def get_allele_freqs(record):
 
 def filter_record_by_genotype_qual(record, qual=60):
     sample = record.samples[0]
-    gq = sample["GQ"]
+    try:
+        gq = sample["GQ"]
+    except:
+        return False
     if gq > qual:
         return True
     return False
