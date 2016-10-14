@@ -1,0 +1,53 @@
+import os
+
+
+vars = Variables("settings.py")
+vars.Add('normalBam', 'The .bam from the normal sample', "normal.bam")
+vars.Add('tumorBam', 'The .bam from the tumor sample', "tumor.bam")
+vars.Add('referenceDir', 'The path to the directory containing the reference file', "~/annotation")
+vars.Add('reference', 'The reference genome in fasta format', "reference.fasta")
+
+
+
+env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
+env.AppendENVPath('PATH', os.getcwd())
+Decider('timestamp-newer')
+
+
+######################################################################################################
+###########################     Arguments     ########################################################
+######################################################################################################
+
+
+
+normalBam = ARGUMENTS.get("normalBam", env["normalBam"])
+tumorBam = ARGUMENTS.get("tumorBam", env["tumorBam"])
+
+#Filename of the reference human genome
+reference = ARGUMENTS.get("reference", env["reference"])
+
+referenceDir = ARGUMENTS.get("referenceDir", env["referenceDir"])
+if not referenceDir.endswith("/"): referenceDir = referenceDir + "/"
+
+
+
+######################################################################################################
+###########################   Variant calling with gatk   ############################################
+######################################################################################################
+
+gatk_command_part1 = "docker run -it --rm -v $$(pwd):/data -v {}:/genome".format(referenceDir)
+gatk_command_part2 = "alexcoppe/gatk -T HaplotypeCaller -R /genome/{}".format(reference)
+gatk_command_part3 = "-stand_call_conf 30 -stand_emit_conf 30"
+gatk_command_part4 = "-I /data/$SOURCE"
+gatk_command_part5 = "-o /data/$TARGET"
+
+gatk_command_parts = [gatk_command_part1, gatk_command_part2, gatk_command_part3, gatk_command_part4,  gatk_command_part5]
+gatk_command = " ".join(gatk_command_parts)
+
+
+normal_variants_call = env.Command(["normal_variants.vcf"], [normalBam], gatk_command)
+tumor_variants_call = env.Command(["tumor_variants.vcf"], [tumorBam], gatk_command)
+
+tumor_normal_heterozygous_variants_table_CMD = "heterozygous_germline_calls_allele_freqs -n ${SOURCES[0]} -t ${SOURCES[1]} -q 30 > $TARGET"
+tumor_normal_heterozygous_variants_table = env.Command(["tumor_normal_heterozygous_variants_table.txt"], [normal_variants_call, tumor_variants_call], tumor_normal_heterozygous_variants_table_CMD)
+
