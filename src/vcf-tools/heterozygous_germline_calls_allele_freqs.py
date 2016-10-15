@@ -23,6 +23,8 @@ def get_allele_freqs(record):
     sample = record.samples[0]
     read_depth = sample['DP']
     allele1_depth,allele2_depth = sample["AD"]
+    if read_depth == 0:
+        return [float("inf"), float("inf")]
     return [float(allele1_depth) / read_depth, float(allele2_depth) / read_depth]
     
 
@@ -50,7 +52,6 @@ if __name__ == "__main__":
         for record in vcf_reader:
             if is_heterozygous(record):
                 if record.FILTER == [] or record.FILTER == None:
-                    allele_freqs = get_allele_freqs(record)
                     if filter_record_by_genotype_qual(record, args.quality):
                         pos = record.POS
                         ref = record.REF
@@ -69,4 +70,8 @@ if __name__ == "__main__":
                     key = "{},{},{}".format(pos,ref,alt)
                     normal = normal_heterozygous_variants.get(key)
                     if normal:
-                        print "{}\t{}\t{}\t{}\t{}\t{}".format(record.CHROM, record.POS, record.REF, record.ALT[0], get_allele_freqs(record)[1],  get_allele_freqs(normal)[1] )
+                        normal_allele_freq = get_allele_freqs(normal)[1]
+                        tumor_allele_freq = get_allele_freqs(record)[1]
+                        if tumor_allele_freq == float("inf")  or normal_allele_freq == float("inf"):
+                            pass
+                        print "{}\t{}\t{}\t{}\t{}\t{}".format(record.CHROM, record.POS, record.REF, record.ALT[0], tumor_allele_freq,  normal_allele_freq )

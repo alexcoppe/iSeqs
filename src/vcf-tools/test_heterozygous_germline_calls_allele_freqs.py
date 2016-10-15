@@ -13,6 +13,7 @@ class Test(unittest.TestCase):
         self.mutect2_vcf = open("../../test-data/mutect2.vcf")
         self.multiple_alts = open("../../test-data/mutect-multiple.vcf")
         self.normal = open("../../test-data/normal.vcf")
+        self.infinite_freq = open("../../test-data/infite_allele_freq.vcf")
 
     def tearDown(self):
         self.mutect_vcf.close()
@@ -24,6 +25,7 @@ class Test(unittest.TestCase):
         if program == "mutect2": f = self.mutect2_vcf
         if program == "multiple": f = self.multiple_alts
         if program == "normal": f = self.normal
+        if program == "infinite": f = self.infinite_freq
         vcf_reader = vcf.Reader(f)
         record_number = 1
         for record in vcf_reader:
@@ -42,6 +44,10 @@ class Test(unittest.TestCase):
     def test_first_normal_variant_freq(self):
         record = self.get_n_variant_from_vcf("normal", 1)
         numpy.testing.assert_almost_equal(get_allele_freqs(record), [0.5, 0.5], decimal=2)
+
+    def test_infinite_alle_freq_variant(self):
+        record = self.get_n_variant_from_vcf("infinite", 1)
+        self.assertEqual(get_allele_freqs(record), [float("inf"), float("inf")])
 
     def test_filter_record_by_genotype_qual_with_first_normal_variant(self):
         record = self.get_n_variant_from_vcf("normal", 1)
