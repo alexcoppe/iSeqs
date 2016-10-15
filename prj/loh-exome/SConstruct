@@ -35,7 +35,16 @@ if not referenceDir.endswith("/"): referenceDir = referenceDir + "/"
 ###########################   Variant calling with gatk   ############################################
 ######################################################################################################
 
-gatk_command_part1 = "docker run -it --rm -v $$(pwd):/data -v {}:/genome".format(referenceDir)
+Import("*")
+if not "running_as_sconscript" in locals():
+    running_as_sconscript = False
+
+if running_as_sconscript:
+    current_dir = Dir("../").abspath
+else:
+    current_dir = Dir(".").abspath
+
+gatk_command_part1 = "docker run -it --rm -v {}:/data -v {}:/genome".format(current_dir, referenceDir)
 gatk_command_part2 = "alexcoppe/gatk -T HaplotypeCaller -R /genome/{}".format(reference)
 gatk_command_part3 = "-stand_call_conf 30 -stand_emit_conf 30"
 gatk_command_part4 = "-I /data/$SOURCE"
