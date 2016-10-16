@@ -1,24 +1,50 @@
 import os
-import settings
+
+
+vars = Variables("settings.py")
+vars.Add('reference', 'The genome reference in fasta format', "reference.fa")
+vars.Add('referenceDir', 'Path to the directory containing the reference', "~/genomic_data/human_genome/")
+vars.Add('annotationDir', 'Path to to the directory containing annotation files', "~/annotation")
+vars.Add('exomeRegions', 'Exome sequencing kit bed file (located in annotationDir)', "~/nexterarapidcapture_exome_targetedregions_v1.2.bed")
+vars.Add('dbsnpVCF', 'The name of the vcf dbSNP vcf file (located in annotationDir)', "All_20160527.vcf.gz")
+vars.Add('dbsnpVCF', 'The name of the vcf dbSNP vcf file (located in annotationDir)', "All_20160527.vcf.gz")
+vars.Add('tumorBam', 'BAM obtained from "tumoral" sample', "tumor.bam")
+vars.Add('normalBam', 'BAM obtained from "normal" sample', "normal.bam")
+vars.Add('startChr', 'First chromosome to analyze. Used to identify variants only in a subset of chromosomes', "5")
+vars.Add('endChr', 'Last chromosome to analyze. Used to identify variants only in a subset of chromosomes', "6")
+vars.Add('snpeffDir', 'Path to directory containing the SnpEff jar file', "~/local/snpEff")
+vars.Add('snpeffGenomeVersion', 'The version of the genome to be used by snpEff (the one specified with the -v option to snpEff.jar)', "GRCh37.75")
+vars.Add('clinvarVCF', 'Name of the vcf file downloaded from Clinvar database', "clinvar.vcf.gz")
+vars.Add('cosmicCodingVCF', 'Name of the vcf file with coding variants downloaded from Cosmic database', "CosmicCodingMuts_v77.vcf.gz")
+vars.Add('cosmicNonCodingVCF', 'Name of the vcf file with non coding variants downloaded from Cosmic database', "CosmicNonCodingVariants.vcf.gz")
 
 
 ################################ Scons Settings  #######################################
 
 #Scons settings Section
-env = Environment(ENV = os.environ, SHELL = '/bin/bash')
+env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
 env.AppendENVPath('PATH', os.getcwd())
 Decider('timestamp-newer')
 
+
+Help(vars.GenerateHelpText(env))
+unknown_variables = vars.UnknownVariables()
+if unknown_variables:
+    print "This are not valid variables: ", " ".join(unknown_variables.keys())
+    Exit(1)
 
 
 ######################################################################################################
 ###########################     Arguments     ########################################################
 ######################################################################################################
 
+
+
+
 arguments_dictionary = {}
 
 #Filename of the reference human genome
-reference = ARGUMENTS.get("reference", settings.reference)
+reference = ARGUMENTS.get("reference", env["reference"])
 arguments_dictionary["reference"] = reference
 
 #The reference directory should contain the fasta file with the human genome and the index build 
@@ -31,55 +57,55 @@ arguments_dictionary["reference"] = reference
 
 # - reference.fa.fai obtained by samtools faidx <reference.fa>
 # - reference.dict obtained by java -jar CreateSequenceDictionary.jar R=reference.fasta O=reference.dict
-referenceDir = ARGUMENTS.get("referenceDir", settings.referenceDir)
+referenceDir = ARGUMENTS.get("referenceDir", env["referenceDir"])
 if not referenceDir.endswith("/"): referenceDir = referenceDir + "/"
 arguments_dictionary["referenceDir"] = referenceDir
 
 
-annotationDir = ARGUMENTS.get("annotationDir",settings.annotationDir)
+annotationDir = ARGUMENTS.get("annotationDir", env["annotationDir"])
 if not annotationDir.endswith("/"): annotationDir = annotationDir + "/"
 arguments_dictionary["annotationDir"] = annotationDir = annotationDir
 
-dbsnpVCF = ARGUMENTS.get("dbsnpVCF", settings.dbsnpVCF)
+dbsnpVCF = ARGUMENTS.get("dbsnpVCF", env["dbsnpVCF"])
 arguments_dictionary["dbsnpVCF"] = dbsnpVCF
 
 
-exomeRegions = ARGUMENTS.get("exomeRegions", settings.exomeRegions)
+exomeRegions = ARGUMENTS.get("exomeRegions", env["exomeRegions"])
 arguments_dictionary["exomeRegions"] = exomeRegions
 
-tumorBam = ARGUMENTS.get("tumorBam", settings.tumorBam)
+tumorBam = ARGUMENTS.get("tumorBam", env["tumorBam"])
 arguments_dictionary["tumorBam"] = tumorBam
-normalBam = ARGUMENTS.get("normalBam", settings.normalBam)
+normalBam = ARGUMENTS.get("normalBam", env["normalBam"])
 arguments_dictionary["normalBam"] = normalBam
 
-startChr = int(ARGUMENTS.get("startChr", settings.startChr))
+startChr = int(ARGUMENTS.get("startChr", env["startChr"]))
 arguments_dictionary["startChr"] = startChr
 
-endChr = int(ARGUMENTS.get("endChr", settings.endChr))
+endChr = int(ARGUMENTS.get("endChr", env["endChr"]))
 arguments_dictionary["endChr"] = endChr
 
-snpeffDir = ARGUMENTS.get("snpeffDir",settings.snpeffDir)
+snpeffDir = ARGUMENTS.get("snpeffDir", env["snpeffDir"])
 if not snpeffDir.endswith("/"): snpeffDir = snpeffDir + "/"
 arguments_dictionary["snpeffDir"] = snpeffDir
 
-snpeffGenomeVersion = ARGUMENTS.get("snpeffGenomeVersion", settings.snpeffGenomeVersion)
+snpeffGenomeVersion = ARGUMENTS.get("snpeffGenomeVersion", env["snpeffGenomeVersion"])
 arguments_dictionary["snpeffGenomeVersion"] = snpeffGenomeVersion
 
-clinvarVCF = ARGUMENTS.get("clinvarVCF", settings.clinvarVCF)
+clinvarVCF = ARGUMENTS.get("clinvarVCF", env["clinvarVCF"])
 arguments_dictionary["clinvarVCF"] = clinvarVCF
 
-cosmicCodingVCF = ARGUMENTS.get("cosmicCodingVCF", settings.cosmicCodingVCF)
+cosmicCodingVCF = ARGUMENTS.get("cosmicCodingVCF", env["cosmicCodingVCF"])
 arguments_dictionary["cosmicCodingVCF"] = cosmicCodingVCF
-cosmicNonCodingVCF = ARGUMENTS.get("cosmicNonCodingVCF", settings.cosmicNonCodingVCF)
+cosmicNonCodingVCF = ARGUMENTS.get("cosmicNonCodingVCF", env["cosmicNonCodingVCF"])
 arguments_dictionary["cosmicNonCodingVCF"] = cosmicNonCodingVCF
 
 
 ######################################################################################################
-########################### Split input bams by chromosome ###########################################
+############### Split input bams by chromosome and run MuTect2 on each chromosome ####################
 ######################################################################################################
 
 
-samtools_split_cmd = "samtools view -b {} {} > $TARGET"
+samtools_split_cmd = "samtools view -b $SOURCE "
 
 samtools_index_cmd = "samtools index $SOURCE"
 
@@ -89,42 +115,50 @@ if startChr == 1 and endChr == 22:
 else:
     chromosomes = [str(chrom) for chrom in range(startChr, endChr + 1)]
 
-command_list = []
-for chrom in chromosomes:
-    prefix = "t_"
-    split_tumor_bam = env.Command(["t_chr{}.bam".format(chrom)], [], samtools_split_cmd.format(tumorBam, chrom))
-    command_list.append(split_tumor_bam)
-    index_bam = env.Command(["t_chr{}.bam.bai".format(chrom)], [split_tumor_bam], samtools_index_cmd)
-    command_list.append(index_bam)
+#command_list = []
+#for chrom in chromosomes:
+    #split_tumor_bam = env.Command(["t_chr"+chrom+".bam"], [tumorBam], samtools_split_cmd + chrom + " > $TARGET")
+    #command_list.append(split_tumor_bam)
+    #index_bam = env.Command(["t_chr{}.bam.bai".format(chrom)], [split_tumor_bam], samtools_index_cmd)
+    #command_list.append(index_bam)
 
-for chrom in chromosomes:
-    prefix = "n_"
-    split_normal_bam = env.Command(["n_chr{}.bam".format(chrom)], [], samtools_split_cmd.format(normalBam, chrom))
-    command_list.append(split_normal_bam)
-    index_bam = env.Command(["n_chr{}.bam.bai".format(chrom)], [split_normal_bam], samtools_index_cmd)
-    command_list.append(index_bam)
-    
+#for chrom in chromosomes:
+    #split_normal_bam = env.Command(["n_chr"+chrom+".bam"], [normalBam], samtools_split_cmd + chrom + " > $TARGET")
+    #command_list.append(split_normal_bam)
+    #index_bam = env.Command(["n_chr{}.bam.bai".format(chrom)], [split_normal_bam], samtools_index_cmd)
+    #command_list.append(index_bam)
 
+Import("*")
+if not "running_as_sconscript" in locals():
+    running_as_sconscript = False
 
+if running_as_sconscript:
+    current_dir = Dir("../").abspath
+else:
+    current_dir = Dir(".").abspath
 
-######################################################################################################
-########################### Run MuTect2 on every chromosome ##########################################
-######################################################################################################
 
 vcf_commands = []
 
-mutect_command_part1 = "docker run -it --rm -v $$(pwd):/data"
-mutect_command_part2 = "-v {referenceDir}:/genome -v {annotationDir}:/annotation alexcoppe/gatk -T MuTect2"
-mutect_command_part3 = "-R /genome/{reference} -I:tumor /data/t_chr{chrom}.bam -I:normal /data/n_chr{chrom}.bam"
-mutect_command_part4 = "-L /annotation/{exomeRegions} --dbsnp /annotation/{dbsnpVCF}  -o /data/$TARGET"
+mutect_command_part1 = "docker run -it --rm -v {}:/data".format(current_dir)
+mutect_command_part2 = "-v " + referenceDir +":/genome -v " + annotationDir + ":/annotation alexcoppe/gatk -T MuTect2"
+mutect_command_part3 = "-R /genome/" + reference + " -I:tumor /data/${SOURCES[0]} -I:normal /data/${SOURCES[1]}"
+mutect_command_part4 = "-L /annotation/" + exomeRegions + " --dbsnp /annotation/" + dbsnpVCF + "  -o /data/$TARGET"
 mutect_command_parts = [mutect_command_part1, mutect_command_part2, mutect_command_part3, mutect_command_part4]
 
 for chrom in chromosomes:
+    split_tumor_bam = env.Command(["t_chr"+chrom+".bam"], [tumorBam], samtools_split_cmd + chrom + " > $TARGET")
+    index_tumor_bam = env.Command(["t_chr{}.bam.bai".format(chrom)], [split_tumor_bam], samtools_index_cmd)
+
+    split_normal_bam = env.Command(["n_chr"+chrom+".bam"], [normalBam], samtools_split_cmd + chrom + " > $TARGET")
+    index_normal_bam = env.Command(["n_chr{}.bam.bai".format(chrom)], [split_normal_bam], samtools_index_cmd)
+ 
+
     arguments_dictionary["chrom"] = chrom
-    mutect2 = env.Command(["mutect_variants_chr{chrom}.vcf".format(**arguments_dictionary)], [command_list], " ".join(mutect_command_parts).format(**arguments_dictionary))
+    mutect2 = env.Command(["mutect_variants_chr{chrom}.vcf".format(**arguments_dictionary)], [split_tumor_bam, split_normal_bam, index_tumor_bam, index_normal_bam], " ".join(mutect_command_parts))
 
     
-    ######## Filter PASS variants #########################################
+    ######### Filter PASS variants #########################################
     filter_pass_variants_cmd = "grep -P  \"\\tPASS|^#\" $SOURCE  > $TARGET"
     filter_pass_variants = env.Command(["mutect_variants_chr{chrom}_pass.vcf".format(**arguments_dictionary)],[mutect2],filter_pass_variants_cmd)
 
@@ -134,11 +168,11 @@ for chrom in chromosomes:
     snpEff_cmd = "java -Xmx4g -jar {snpeffDir}snpEff.jar eff -v {snpeffGenomeVersion} $SOURCE > $TARGET".format(**arguments_dictionary)
     snpEFF = env.Command(["mutect_variants_chr{chrom}_pass_snpEFF.vcf".format(**arguments_dictionary)],[filter_pass_variants],snpEff_cmd)
 
-    ##### Clinvar annotation #############################################
+    ###### Clinvar annotation #############################################
     clinvar_cmd = "java -Xmx4g -jar {snpeffDir}SnpSift.jar annotate {annotationDir}{clinvarVCF}  $SOURCE  > $TARGET".format(**arguments_dictionary)
     clinvar = env.Command(["mutect_variants_chr{chrom}_pass_snpEFF_clinvar.vcf".format(**arguments_dictionary)], [snpEFF], clinvar_cmd)
 
-    ##### #Cosmic coding variants annotation #############################
+    ###### #Cosmic coding variants annotation #############################
     cosmic_coding_cmd = "java -Xmx4g -jar {snpeffDir}SnpSift.jar annotate {annotationDir}{cosmicCodingVCF} $SOURCE  > $TARGET".format(**arguments_dictionary)
     cosmic_coding = env.Command(["mutect_variants_chr{chrom}_pass_snpEFF_clinvar_cosmic_coding.vcf".format(**arguments_dictionary)], [clinvar], cosmic_coding_cmd)
 
@@ -149,7 +183,7 @@ for chrom in chromosomes:
 
 
 
-merge_cmd = "cat mutect_variants_chr*_pass_snpEFF_clinvar_cosmic_coding_non_coding.vcf | grep -v \"^#\" > $TARGET"
+merge_cmd = "cat $SOURCES | grep -v \"^#\" > $TARGET".format(current_dir)
 merge = env.Command(["merged_variants.vcf"], [vcf_commands], merge_cmd)
 
 sort_vcf_cmd = "vcf-sort $SOURCE > $TARGET"
