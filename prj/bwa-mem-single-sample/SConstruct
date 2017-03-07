@@ -172,4 +172,4 @@ renderReads = env.Command(["mapping-sorted-rmdup-realigned-recal.bam"], [indelRe
 #######################################################################################################
 
 coverageHistCMD = "bedtools coverage -hist -abam $SOURCE -b {}{}".format(annotationDir,exomeRegions) + " | grep ^all > $TARGET"
-coverageHist = env.Command(["coverage-hist.txt"], [renderReads], coverageHistCMD)
+coverageHist = env.Command(["{}-coverage-hist.txt".format(sampleName)], [renderReads], coverageHistCMD)
