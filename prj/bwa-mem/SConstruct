@@ -1,0 +1,206 @@
+import os
+
+
+################################## Quick documentation ############################
+
+#Files needed by pipeline (better symlink them):
+# - GenomeAnalysisTK.jar
+# - reference.fa
+# - reference.fa.fai samtools faidx <reference.fa>
+# - reference.dict java -jar CreateSequenceDictionary.jar R=reference.fasta O=reference.dict
+# - annotation dirctory containing 00-All.vcf.idx 00-All.vcf
+# - snpEff.jar
+# - SnpSift.jar
+# - snpEff.config
+
+
+################################ Scons Settings  #######################################
+
+vars = Variables("settings.py")
+vars.Add('reference', 'The genome reference in fasta format', "reference.fa")
+vars.Add('referenceDir', 'The path to the directory containing the reference file', "~/annotation")
+vars.Add('reads1', 'The the name of the fastq files with the first pair of paired end reads', "reads1.fastq.gz")
+vars.Add('reads2', 'The the name of the fastq files with the second pair of paired end reads', "reads2.fastq.gz")
+vars.Add('removeNs', 'y/n if Ns if should trim flanking Ns from reads', "n")
+#vars.Add('removeSoftClipped', 'y/n if soft clipped reads should be removed from bam file', "n")
+vars.Add('sampleName', 'An identifier for the sample', "sample")
+vars.Add('samQuality', "Mapping Quality for samtools", 0)
+vars.Add('requiredFlag', "Required flag for samtools", 0)
+vars.Add('filteringFlag', "Filtering flag, 0 for unset [0]", 0)
+vars.Add('projectName', 'A name for the project', "project")
+vars.Add('exomeRegions', 'The bed file with exome caputered regions. This file must be located in the annotaion directory', "nexterarapidcapture_exome_targetedregions_v1.2.bed")
+vars.Add('dbsnpVCF', 'The name of the vcf file downloaded from dbSNP database', "All_20170710.vcf")
+vars.Add('annotationDir', 'Path to the directory with annotation files', "~/annotation")
+vars.Add('gatkJarDir', 'The path to the directory to containing the GenomeAnalysisTK.jar file', "~/local/GenomeAnalysisTK/")
+vars.Add('picardDir', 'The path to the directory to containing the picard.jar file', "~/local/")
+vars.Add('processors', 'Number of CPUs to be used', "2")
+vars.Add('maxMemory', 'Max memory to be used (in bytes)', "1000000000")
+vars.Add('tool', 'Choose between samtools and Picard', "samtools")
+
+
+
+#Scons settings Section
+env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
+env.AppendENVPath('PATH', os.getcwd())
+Decider('timestamp-newer')
+
+
+######################################################################################################
+###########################     Arguments     ########################################################
+######################################################################################################
+
+#Filename of the reference human genome
+reference = ARGUMENTS.get("reference", env["reference"])
+
+##The reference directory should contain the fasta file with the human genome and the index build 
+##by bwa with the bwa index <genome.fasta> command (it produces the a bunch of files with these extensions:
+## - .amb
+## - .ann
+## - .bwt
+## - .pac
+## - .sa
+
+## - reference.fa.fai obtained by samtools faidx <reference.fa>
+## - reference.dict obtained by java -jar CreateSequenceDictionary.jar R=reference.fasta O=reference.dict
+referenceDir = ARGUMENTS.get("referenceDir", env["referenceDir"])
+if not referenceDir.endswith("/"): referenceDir = referenceDir + "/"
+
+gatkJarDir = ARGUMENTS.get("gatkJarDir", env["gatkJarDir"])
+if not gatkJarDir.endswith("/"): gatkJarDir = gatkJarDir + "/"
+
+
+picardDir = ARGUMENTS.get("picardDir", env["picardDir"])
+if not picardDir.endswith("/"): picardDir = picardDir + "/"
+
+annotationDir = ARGUMENTS.get("annotationDir", env["annotationDir"])
+if not annotationDir.endswith("/"): annotationDir = annotationDir + "/"
+
+dbsnpVCF = ARGUMENTS.get("dbsnpVCF", env["dbsnpVCF"])
+reads1 = ARGUMENTS.get("reads1", env["reads1"])
+reads2 = ARGUMENTS.get("reads2", env["reads2"])
+exomeRegions = ARGUMENTS.get("exomeRegions", env["exomeRegions"])
+projectName = ARGUMENTS.get("projectName", env["projectName"] )
+sampleName = ARGUMENTS.get("sampleName", env["sampleName"])
+removeNs = ARGUMENTS.get("removeNs", env["removeNs"])
+samQuality = ARGUMENTS.get("samQuality", env["samQuality"])
+requiredFlag = ARGUMENTS.get("requiredFlag", env["requiredFlag"])
+filteringFlag = ARGUMENTS.get("filteringFlag", env["filteringFlag"])
+#removeSoftClipped = ARGUMENTS.get("removeSoftClipped", env["removeSoftClipped"])
+processors = ARGUMENTS.get("processors", env["processors"])
+maxMemory = ARGUMENTS.get("maxMemory", env["maxMemory"])
+tool = ARGUMENTS.get("tool", env["tool"])
+
+
+######################################################################################################
+########################### Remove Ns from reads #####################################################
+######################################################################################################
+
+removeNsFromReadsCMD = "cutadapt --pair-filter=both -m 147 --trim-n --pair-filter=any   -o ${TARGETS[0]} -p ${TARGETS[1]} ${SOURCES[0]} ${SOURCES[1]}"
+if removeNs == "y":
+    removeNsFromReads = env.Command(["r1_no_Ns.fastq.gz", "r2_no_Ns.fastq.gz"], [reads1,reads2], removeNsFromReadsCMD)
+    reads1 = "r1_no_Ns.fastq.gz"
+    reads2 = "r2_no_Ns.fastq.gz"
+else:
+    removeNsFromReads = env.Command([reads1,reads2], [], "")
+
+
+
+
+
+######################################################################################################
+########################### BWA MEM Alignment ########################################################
+######################################################################################################
+
+bwaCMD = "bwa mem -M -R \"@RG\\tID:{}\\tLB:{}\\tSM:{}\\tPL:ILLUMINA\"  -t {} {}{} ".format(sampleName, "exome", sampleName, processors, referenceDir, reference) + "<(zcat ${SOURCES[0]}) <(zcat ${SOURCES[1]})"
+################################## To bam file #####################################################
+#-h: print header for the SAM output
+#-q minimum mapping quality [0]
+#-f required flag, 0 for unset [0]
+#-F filtering flag, 0 for unset [0]
+bamBuildingCMD = " | samtools view -Sb -h -q {} -f {} -F {} - | ".format(int(samQuality), int(requiredFlag), int(filteringFlag))
+
+################################## Order bam file ##################################################
+if tool == "samtools":
+    sortBamCMD = "samtools sort -m {} -  > $TARGET".format(maxMemory)
+else:
+    sortBamCMD = "java -jar {}picard.jar SortSam I=/dev/stdin O=$TARGET SORT_ORDER=coordinate".format(picardDir)
+
+mappingCMD = bwaCMD + bamBuildingCMD + sortBamCMD
+mapping = env.Command(["01_mapping.bam"], [removeNsFromReads], mappingCMD )
+
+
+
+
+
+#######################################################################################################
+########################### Removal of PCR duplicates ################################################
+######################################################################################################
+
+if tool == "samtools":
+    pcrRemovalCMD = "samtools rmdup -S $SOURCE $TARGET"
+    pcrRemoval = env.Command(["02_mapping-rmdup.bam"], [mapping], pcrRemovalCMD)
+
+    pcrRemovalIndexCMD = "samtools index $SOURCE"
+    pcrRemovalIndex = env.Command(["02_mapping-rmdup.bam.bai"], [pcrRemoval], pcrRemovalIndexCMD)
+else:
+    pcrRemovalCMD = "java -Xmx4g -jar {}picard.jar MarkDuplicates I=$SOURCE O=$TARGET M=metrics.txt REMOVE_DUPLICATES=true CREATE_INDEX=true".format(picardDir)
+    pcrRemoval = env.Command(["02_mapping-rmdup.bam"], [mapping], pcrRemovalCMD)
+    pcrRemovalIndex = env.Command([], [], "")
+
+
+
+
+
+#####################################################################################################
+#### Remove low mapping quality reads: bad CIGAR, unmapped reads, not primary aligned, ##############
+#### failing vendor quality check, duplicated and mapping quality unavailable          ##############
+#####################################################################################################
+
+#filteredBam = "{}_filtered.bam".format(sampleName)
+filteringBamCMD = "java -Xmx4g -jar {}GenomeAnalysisTK.jar -T PrintReads -R {}{} -I $SOURCE -o $TARGET -rf MappingQualityZero -rf BadCigar -rf UnmappedRead -rf NotPrimaryAlignment -rf FailsVendorQualityCheck -rf DuplicateRead -rf MappingQualityUnavailable -rf BadMate".format(gatkJarDir,referenceDir,reference)
+filteringBam = env.Command(["03_mapping-rmdup-cleaned.bam"],[pcrRemoval, pcrRemovalIndex],filteringBamCMD)
+
+
+
+
+
+#######################################################################################################
+############################ Local realignment around indels ##########################################
+#######################################################################################################
+
+
+#Table of putative indels
+putativeIndelsTableCMD = "java -Xmx4g -jar {}GenomeAnalysisTK.jar -T RealignerTargetCreator -R {}{} -o $TARGET  -I $SOURCE".format(gatkJarDir, referenceDir, reference)
+putativeIndelsTable = env.Command(["realigning.intervals"], [filteringBam], putativeIndelsTableCMD)
+
+
+#Local realignment around indels
+indelRealignerCmd = "java -Xmx4g -jar {}GenomeAnalysisTK.jar -R {}".format(gatkJarDir, referenceDir) + reference +  " -I ${SOURCES[0]} -T IndelRealigner -targetIntervals ${SOURCES[1]} -o $TARGET"
+indelRealignment = env.Command(["04_mapping-rmdup-cleaned-realigned.bam"], [filteringBam, putativeIndelsTable], indelRealignerCmd)
+
+
+
+
+
+#######################################################################################################
+############################ Quality score recalibration ##############################################
+#######################################################################################################
+
+recalibrationTableCMD = "java -Xmx4g -jar {}GenomeAnalysisTK.jar -T BaseRecalibrator -I $SOURCE -R {}{}  -knownSites {}{} -o $TARGET".format(gatkJarDir,referenceDir,reference,annotationDir,dbsnpVCF)
+recalibrationTable = env.Command(["{}.grp".format(projectName)], [indelRealignment], recalibrationTableCMD)
+
+
+renderReadsCMD = "java -jar {}GenomeAnalysisTK.jar -T PrintReads -R {}{}".format(gatkJarDir,referenceDir,reference) + " -I ${SOURCES[0]} -BQSR ${SOURCES[1]} -o $TARGET"
+renderReads = env.Command(["05_mapping-rmdup-cleaned-realigned-recalibration.bam"], [indelRealignment, recalibrationTable], renderReadsCMD)
+
+
+
+
+
+
+#######################################################################################################
+############################  Statistics ##############################################################
+#######################################################################################################
+
+coverageHistCMD = "bedtools coverage -hist -abam $SOURCE -b {}{}".format(annotationDir,exomeRegions) + " | grep ^all > $TARGET"
+coverageHist = env.Command(["{}-coverage-hist.txt".format(sampleName)], [renderReads], coverageHistCMD)
