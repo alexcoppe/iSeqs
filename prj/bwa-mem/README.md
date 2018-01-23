@@ -2,6 +2,12 @@
 
 A scons based pipeline for mapping Illumina paired end reads obtained from exome sequencing to the human genome.
 
+<p align="center">
+  <img src="bwa-mem.png" >
+</p>
+
+
+
 
 ### Software Dependencies:
 * [scons](http://scons.org/)
